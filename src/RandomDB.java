@@ -173,7 +173,11 @@ public class RandomDB {
                         else
                             outstat.print(range[i] + "\t");
                     }
+                    // additional data types
+                } else if (datatype[i].equals("TIME")) {
+                    outstat.print(numtuple + "\t");
                 }
+
             }
             outstat.close();
             in.close();
