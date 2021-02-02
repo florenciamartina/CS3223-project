@@ -13,6 +13,8 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 
+import java.sql.Time;
+
 public class ConvertTxtToTbl {
 
     public static void main(String[] args) throws IOException {
@@ -58,6 +60,8 @@ public class ConvertTxtToTbl {
                 } else if (datatype == Attribute.REAL) {
                     data.add(Float.valueOf(dataElement));
                 } else if (datatype == Attribute.STRING) {
+                    data.add(dataElement);
+                } else if (datatype == Attribute.TIME) {
                     data.add(dataElement);
                 } else {
                     System.err.println("Invalid data type");

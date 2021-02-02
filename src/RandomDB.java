@@ -3,6 +3,7 @@ import qp.utils.Schema;
 
 import java.io.*;
 import java.util.*;
+import java.sql.Time;
 
 public class RandomDB {
 
@@ -77,6 +78,8 @@ public class RandomDB {
                     // System.out.println("String");
                 } else if (datatype[i].equals("REAL")) {
                     type = Attribute.REAL;
+                } else if (datatype[i].equals("TIME")) {
+                    type = Attribute.TIME;
                 } else {
                     type = -1;
                     System.err.println("invalid data type");
@@ -122,6 +125,9 @@ public class RandomDB {
                     } else if (datatype[j].equals("FLOAT")) {
                         float value = range[j] * random.nextFloat();
                         outtbl.print(value + "\t");
+                    } else if (datatype[j].equals("TIME")) {
+                        Time time = rdb.randomTime(range[j]);
+                        outtbl.print(time + "\t");
                     } else if (datatype[j].equals("INTEGER")) {
                         if (keytype[j].equals("PK")) {
                             int numb = random.nextInt(range[0]);
@@ -151,6 +157,8 @@ public class RandomDB {
                 if (datatype[i].equals("STRING")) {
                     outstat.print(numtuple + "\t");
                 } else if (datatype[i].equals("FLOAT")) {
+                    outstat.print(numtuple + "\t");
+                } else if (datatype[i].equals("TIME")) {
                     outstat.print(numtuple + "\t");
                 } else if (datatype[i].equals("INTEGER")) {
                     if (keytype[i].equals("PK")) {
@@ -183,6 +191,16 @@ public class RandomDB {
         for (int j = 0; j < range; ++j)
             s += ((char) (97 + random.nextInt(26)));
         return s;
+    }
+
+    /**
+     * Generates a random time of length equal to range
+     **/
+    public Time randomTime(int range) {
+        final int millisInDay = 24 * 3600 * 1000;
+        Time time = new Time((long) random.nextInt(millisInDay));
+
+        return time;
     }
 
     public int getnumdistinct(boolean[] key) {
