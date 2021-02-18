@@ -47,23 +47,6 @@ public class Select extends Operator {
     }
 
     /**
-     * Opens the connection to the base operator
-     **/
-    public boolean open() {
-        eos = false;  // Since the stream is just opened
-        start = 0;    // Set the cursor to starting position in input buffer
-
-        /** Set number of tuples per page**/
-        int tuplesize = schema.getTupleSize();
-        batchsize = Batch.getPageSize() / tuplesize;
-
-        if (base.open())
-            return true;
-        else
-            return false;
-    }
-
-    /**
      * returns a batch of tuples that satisfies the
      * * condition specified on the tuples coming from base operator
      * * NOTE: This operation is performed on the fly
@@ -112,6 +95,23 @@ public class Select extends Operator {
                 start = i;
         }
         return outbatch;
+    }
+
+    /**
+     * Opens the connection to the base operator
+     **/
+    public boolean open() {
+        eos = false;  // Since the stream is just opened
+        start = 0;    // Set the cursor to starting position in input buffer
+
+        /** Set number of tuples per page**/
+        int tuplesize = schema.getTupleSize();
+        batchsize = Batch.getPageSize() / tuplesize;
+
+        if (base.open())
+            return true;
+        else
+            return false;
     }
 
     /**

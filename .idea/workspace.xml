@@ -2,16 +2,22 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="3dc5fae0-e5c9-48b9-8203-7ff7ec6daf6d" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/codeStyles/Project.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/dbnavigator.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/classes/ConvertTxtToTbl.class" beforeDir="false" afterPath="$PROJECT_DIR$/classes/ConvertTxtToTbl.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/classes/RandomDB.class" beforeDir="false" afterPath="$PROJECT_DIR$/classes/RandomDB.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/classes/qp/operators/OpType.class" beforeDir="false" afterPath="$PROJECT_DIR$/classes/qp/operators/OpType.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/classes/qp/utils/Attribute.class" beforeDir="false" afterPath="$PROJECT_DIR$/classes/qp/utils/Attribute.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ConvertTxtToTbl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ConvertTxtToTbl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/RandomDB.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/RandomDB.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/qp/operators/OpType.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/qp/operators/OpType.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/qp/utils/Attribute.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/qp/utils/Attribute.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/qp/operators/Project.class" beforeDir="false" afterPath="$PROJECT_DIR$/classes/qp/operators/Project.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/qp/operators/Select.class" beforeDir="false" afterPath="$PROJECT_DIR$/classes/qp/operators/Select.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/qp/optimizer/RandomOptimizer.class" beforeDir="false" afterPath="$PROJECT_DIR$/classes/qp/optimizer/RandomOptimizer.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/qp/utils/Tuple.class" beforeDir="false" afterPath="$PROJECT_DIR$/classes/qp/utils/Tuple.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/qp/operators/Distinct.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/qp/operators/Distinct.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/qp/operators/Project.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/qp/operators/Project.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/qp/operators/Select.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/qp/operators/Select.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/qp/optimizer/RandomInitialPlan.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/qp/optimizer/RandomInitialPlan.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/qp/optimizer/RandomOptimizer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/qp/optimizer/RandomOptimizer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/qp/utils/Tuple.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/qp/utils/Tuple.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/testcases/CUSTOMER.stat" beforeDir="false" afterPath="$PROJECT_DIR$/testcases/CUSTOMER.stat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/testcases/CUSTOMER.tbl" beforeDir="false" afterPath="$PROJECT_DIR$/testcases/CUSTOMER.tbl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/testcases/CUSTOMER.txt" beforeDir="false" afterPath="$PROJECT_DIR$/testcases/CUSTOMER.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -31,13 +37,32 @@
   <component name="PropertiesComponent">
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../../../../Intern/OSS" />
     <property name="settings.editor.selected.configurable" value="preferences.lookFeel" />
   </component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\Florencia Martina\Documents\NUS\Y2S2\CS3223\Project\COMPONENT\testcases" />
       <recent name="C:\Users\Florencia Martina\Documents\NUS\Y2S2\CS3223\Project\COMPONENT\experiments" />
     </key>
+  </component>
+  <component name="RunManager">
+    <configuration name="build" type="BatchConfigurationType" factoryName="Batch" temporary="true">
+      <module name="COMPONENT" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="WORKING_DIRECTORY" value="C:\Users\Florencia Martina\Documents\NUS\Y2S2\CS3223\Project\COMPONENT" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SCRIPT_NAME" value="build.bat" />
+      <option name="PARAMETERS" value="" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Batch.build" />
+      </list>
+    </recent_temporary>
   </component>
   <component name="ServiceViewManager">
     <option name="viewStates">
@@ -65,10 +90,10 @@
     <servers />
   </component>
   <component name="WindowStateProjectService">
-    <state x="223" y="68" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1612265697182">
+    <state x="223" y="68" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1613648545501">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state x="223" y="68" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1536.824@0.0.1536.824" timestamp="1612265697182" />
+    <state x="223" y="68" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1536.824@0.0.1536.824" timestamp="1613648545501" />
     <state x="524" y="216" key="#com.intellij.fileTypes.FileTypeChooser" timestamp="1612273120158">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
@@ -77,17 +102,45 @@
       <screen x="0" y="0" width="1536" height="824" />
     </state>
     <state x="1003" y="305" key="#com.intellij.ide.util.projectWizard.JdkChooserPanel.MyDialog/0.0.1536.824@0.0.1536.824" timestamp="1612082865220" />
+    <state x="817" y="168" key="FileChooserDialogImpl" timestamp="1613478289508">
+      <screen x="0" y="0" width="1536" height="824" />
+    </state>
+    <state x="817" y="168" key="FileChooserDialogImpl/0.0.1536.824@0.0.1536.824" timestamp="1613478289508" />
+    <state width="1493" height="429" key="GridCell.Tab.0.bottom" timestamp="1613653638311">
+      <screen x="0" y="0" width="1536" height="824" />
+    </state>
+    <state width="1493" height="429" key="GridCell.Tab.0.bottom/0.0.1536.824@0.0.1536.824" timestamp="1613653638311" />
+    <state width="1493" height="429" key="GridCell.Tab.0.center" timestamp="1613653638310">
+      <screen x="0" y="0" width="1536" height="824" />
+    </state>
+    <state width="1493" height="429" key="GridCell.Tab.0.center/0.0.1536.824@0.0.1536.824" timestamp="1613653638310" />
+    <state width="1493" height="429" key="GridCell.Tab.0.left" timestamp="1613653638310">
+      <screen x="0" y="0" width="1536" height="824" />
+    </state>
+    <state width="1493" height="429" key="GridCell.Tab.0.left/0.0.1536.824@0.0.1536.824" timestamp="1613653638310" />
+    <state width="1493" height="429" key="GridCell.Tab.0.right" timestamp="1613653638310">
+      <screen x="0" y="0" width="1536" height="824" />
+    </state>
+    <state width="1493" height="429" key="GridCell.Tab.0.right/0.0.1536.824@0.0.1536.824" timestamp="1613653638310" />
+    <state x="441" y="135" key="RollbackChangesDialog" timestamp="1613481629767">
+      <screen x="0" y="0" width="1536" height="824" />
+    </state>
+    <state x="441" y="135" key="RollbackChangesDialog/0.0.1536.824@0.0.1536.824" timestamp="1613481629767" />
     <state x="277" y="56" key="SettingsEditor" timestamp="1612270232385">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
     <state x="277" y="56" key="SettingsEditor/0.0.1536.824@0.0.1536.824" timestamp="1612270232385" />
-    <state x="465" y="238" key="com.intellij.ide.util.TipDialog" timestamp="1612186533838">
+    <state x="465" y="238" key="com.intellij.ide.util.TipDialog" timestamp="1613633271021">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state x="465" y="238" key="com.intellij.ide.util.TipDialog/0.0.1536.824@0.0.1536.824" timestamp="1612186533838" />
-    <state x="814" y="145" width="672" height="678" key="search.everywhere.popup" timestamp="1612266793626">
+    <state x="465" y="238" key="com.intellij.ide.util.TipDialog/0.0.1536.824@0.0.1536.824" timestamp="1613633271021" />
+    <state x="462" y="144" width="611" height="536" key="find.popup" timestamp="1613654611699">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state x="814" y="145" width="672" height="678" key="search.everywhere.popup/0.0.1536.824@0.0.1536.824" timestamp="1612266793626" />
+    <state x="462" y="144" width="611" height="536" key="find.popup/0.0.1536.824@0.0.1536.824" timestamp="1613654611699" />
+    <state x="814" y="145" width="672" height="678" key="search.everywhere.popup" timestamp="1613654187152">
+      <screen x="0" y="0" width="1536" height="824" />
+    </state>
+    <state x="814" y="145" width="672" height="678" key="search.everywhere.popup/0.0.1536.824@0.0.1536.824" timestamp="1613654187152" />
   </component>
 </project>

@@ -103,7 +103,36 @@ public class RandomInitialPlan {
             tab_op_hash.put(tabname, op1);
         }
 
-        // 12 July 2003 (whtok)
+//        public void createDistinctOp() {
+//            Distinct op1 = null;
+//            for (int j = 0; j < projectlist.size(); ++j) {
+//
+//                if (cn.getOpType() == Condition.DISTINCT) {
+//                    String tabname = cn.getLhs().getTabName();
+//                    Operator tempop = (Operator) tab_op_hash.get(tabname);
+//                    op1 = new Distinct(tempop, OpType.DISTINCT);
+//                    /** set the schema same as base relation **/
+//                    op1.setSchema(tempop.getSchema());
+//                    modifyHashtable(tempop, op1);
+//                }
+//            }
+
+        public void createDistinctOp() {
+            Select op1 = null;
+            for (int j = 0; j < selectionlist.size(); ++j) {
+                Condition cn = selectionlist.get(j);
+                if (cn.getOpType() == Condition.DISTINCT) {
+                    String tabname = cn.getLhs().getTabName();
+                    Operator tempop = (Operator) tab_op_hash.get(tabname);
+                    op1 = new Distinct(tempop, OpType.SELECT);
+                    /** set the schema same as base relation **/
+                    op1.setSchema(tempop.getSchema());
+                    modifyHashtable(tempop, op1);
+                }
+            }
+        }
+
+            // 12 July 2003 (whtok)
         // To handle the case where there is no where clause
         // selectionlist is empty, hence we set the root to be
         // the scan operator. the projectOp would be put on top of

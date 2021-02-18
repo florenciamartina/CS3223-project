@@ -70,7 +70,7 @@ public class Project extends Operator {
             Attribute attr = attrset.get(i);
 
             if (attr.getAggType() != Attribute.NONE) {
-                System.err.println("Aggragation is not implemented.");
+                System.err.println("Aggregation is not implemented.");
                 System.exit(1);
             }
 
