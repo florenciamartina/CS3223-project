@@ -55,6 +55,14 @@ public class RandomOptimizer {
                     nj.setRight(right);
                     nj.setNumBuff(numbuff);
                     return nj;
+
+                case JoinType.BLOCKNESTED:
+                    BlockNestedLoopJoin bnlj = new BlockNestedLoopJoin((Join) node);
+                    bnlj.setLeft(left);
+                    bnlj.setRight(right);
+                    bnlj.setNumBuff(numbuff);
+                    return bnlj;
+
                 default:
                     return node;
             }
@@ -368,7 +376,7 @@ public class RandomOptimizer {
     }
 
     /**
-     * Modifies the schema of operators which are modified due to selecing an alternative neighbor plan
+     * Modifies the schema of operators which are modified due to selecting an alternative neighbor plan
      **/
     private void modifySchema(Operator node) {
         if (node.getOpType() == OpType.JOIN) {
