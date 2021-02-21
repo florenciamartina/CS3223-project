@@ -6,6 +6,7 @@ package qp.utils;
 
 import java.util.*;
 import java.io.*;
+import java.lang.StringBuilder;
 
 /**
  * Tuple - a simple object which holds an ArrayList of data
@@ -143,4 +144,15 @@ public class Tuple implements Serializable {
         return true;
 
     }
+
+//    @Override
+//    public String toString() {
+//        StringBuilder sb = new StringBuilder();
+//        sb.append("[");
+//        for (Object o: _data) {
+//            sb.append(o);
+//        }
+//        sb.append("]");
+//        return sb.toString();
+//    }
 }

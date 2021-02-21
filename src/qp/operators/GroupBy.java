@@ -5,13 +5,15 @@
 package qp.operators;
 
 import qp.utils.*;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 public class GroupBy extends Operator {
 
     int batchsize;  // Number of tuples per outbatch
-    ArrayList<String> colNames;
-    ArrayList<Integer> attributeIndexes;
+    ArrayList<Attribute> attributes;
     Operator base;  // Base operator
+    HashMap<Tuple, ArrayList<Tuple>> groupedTuples = new HashMap<>();
 
     /**
      * The following fields are required during
@@ -25,34 +27,69 @@ public class GroupBy extends Operator {
     /**
      * constructor
      **/
-    public GroupBy(Operation base, ArrayList<String> colNames, int type) {
+    public GroupBy(Operator base, ArrayList<Attribute> attributes, int type) {
         super(type);
         this.base = base;
-        this.colNames = colNames;
-        this.attributeIndexes = new ArrayList<>();
+        this.attributes = attributes;
     }
 
-    /**
-     * To group the tuples based on the column names
-     **/
+//    /**
+//     * To group the tuples based on the column names
+//     **/
+//
+//    protected ArrayList<Attribute> convertStringsToAttributes(ArrayList<String> colNames) {
+//        String tblName = schema.getAttribute(0).getTabName();
+//        ArrayList<Attribute> attributes = new ArrayList<>();
+//        for (String colName : colNames) {
+//            Attribute attribute = new Attribute(tblName, colName);
+//            attributes.add(attribute);
+//        }
+//    }
 
-    protected ArrayList<Attribute> convertStringsToAttributes(ArrayList<String> colNames) {
-        String tblName = schema.getAttribute(0).getTabName();
-        ArrayList<Attribute> attributes = new ArrayList<>();
-        for (String colName : colNames) {
-            Attribute attribute = new Attribute(tblName, colName);
-            attributes.add(attribute);
+    protected void groupBy(Batch toGroup) {
+
+        ArrayList<Tuple> tuples = new ArrayList<>();
+        int pageSize = toGroup.getPageSize();
+
+        for (int i = 0; i < pageSize; i++) {
+            tuples.add(toGroup.get(i));
         }
-    }
 
-    protected Map<GroupingKey, Tuple> groupBy(Batch toGroup, ArrayList<String> colNames) {
+        ArrayList<Tuple> keyAttr = new ArrayList<>();
+        HashMap<Tuple, ArrayList<Tuple>> groupedTuples = new HashMap<>();
 
-        Function<ArrayList<String>, ArrayList<Attribute>> groupingKey =
-            strings -> convertStringsToAttributes(strings);
-//        GroupingKey groupingKey = new GroupingKey(attributes);
-        Map<GroupingKey, Tuple> groupedTuples = toGroup.stream().collect(
-            Collectors.groupingBy(groupingKey));
-        return groupedTuples;
+        for (int i = 0; i < tuples.size(); i++) {
+            ArrayList<Object> temp = new ArrayList<>();
+            for (int j = 0; j < attributes.size(); j++) {
+                int idx = schema.indexOf(attributes.get(j));
+                temp.add(tuples.get(i).dataAt(idx));
+            }
+            Tuple tempTuple = new Tuple(temp);
+            keyAttr.add(tempTuple);
+        }
+
+        for (int i = 0; i < keyAttr.size(); i++) {
+            Tuple a = keyAttr.get(i);
+            if (groupedTuples.containsKey(a)) {
+                ArrayList<Tuple> tupleArrayList = groupedTuples.get(a);
+                tupleArrayList.add(tuples.get(i));
+                groupedTuples.put(a, tupleArrayList);
+
+            } else {
+                ArrayList<Tuple> arr = new ArrayList<>();
+                arr.add(tuples.get(i));
+                groupedTuples.put(a, arr);
+            }
+        }
+        this.groupedTuples = groupedTuples;
+
+//        ArrayList<Object> tupleObj = Arrays.asList(tuples);
+//
+//        Function<ArrayList<Attribute>, ArrayList<Attribute>> groupingKey =
+//                attributes -> attributes;
+////        GroupingKey groupingKey = new GroupingKey(attributes);
+//        HashMap<ArrayList<Attribute>, Tuple> groupedTuples = tupleObj.stream().collect(
+//            Collectors.groupingBy(groupingKey));
     }
 
     /**
@@ -90,7 +127,12 @@ public class GroupBy extends Operator {
 //                outbatch.add(present);
 //            }
 
-            outbatch = groupBy(inbatch, colNames);
+            for ( Tuple key : groupedTuples.keySet() ) {
+                ArrayList<Tuple> ts = groupedTuples.get(key);
+                for (Tuple t : ts) {
+                    outbatch.add(t);
+                }
+            }
 
             /** Modify the cursor to the position required
              ** when the base operator is called next time;
@@ -109,10 +151,14 @@ public class GroupBy extends Operator {
         ArrayList<Attribute> newattr = new ArrayList<>();
 //        for (int i = 0; i < attrset.size(); ++i)
 //            newattr.add((Attribute) attributes.get(i).clone());
-        GroupBy newgroupby = new GroupBy(newbase, newattr, optype)
+        GroupBy newgroupby = new GroupBy(newbase, newattr, optype);
         Schema newSchema = newbase.getSchema().subSchema(newattr);
         newgroupby.setSchema(newSchema);
         return newgroupby;
+    }
+
+    public long getStatistics(GroupBy node) {
+        return 1;
     }
 
 

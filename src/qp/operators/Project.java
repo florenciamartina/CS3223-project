@@ -18,7 +18,7 @@ public class Project extends Operator {
     int batchsize;                 // Number of tuples per outbatch
 
     /**
-     * The following fields are requied during execution
+     * The following fields are required during execution
      * * of the Project Operator
      **/
     Batch inbatch;

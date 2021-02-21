@@ -15,6 +15,8 @@ public class Condition {
 
     public static final int SELECT = 1;
     public static final int JOIN = 2;
+    public static final int DISTINCT = 3;
+    public static final int GROUPBY = 4;
 
     Attribute lhs; // Left hand side of the condition
     int optype;    // Operation type
