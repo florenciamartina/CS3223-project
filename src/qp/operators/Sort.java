@@ -6,14 +6,16 @@ package qp.operators;
 
 import java.io.EOFException;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import qp.optimizer.BufferManager;
 import qp.utils.*;
 
-public class ExternalSorter extends Operator {
+public class Sort extends Operator {
 
     int batchsize;  // Number of tuples per outbatch
     ArrayList<SortedRun> sortedRuns;
@@ -39,7 +41,7 @@ public class ExternalSorter extends Operator {
     /**
      * constructor
      **/
-    public ExternalSorter(int type, Operator base, int numOfBuff, ArrayList<Attribute> attributeList, String tabname) {
+    public Sort(int type, Operator base, int numOfBuff, ArrayList<Attribute> attributeList, String tabname) {
         super(type);
         this.base = base;
         this.numOfBuff = numOfBuff;
@@ -64,9 +66,14 @@ public class ExternalSorter extends Operator {
         while (!outbatch.isFull()) {
             try {
                 Tuple data = (Tuple) in.readObject();
+//                ArrayList<Tuple> tuples = sortedRuns.get(0).getSortedTuples();
+//                for (Tuple tuple : tuples) {
+//                    outbatch.add(tuple);
+//                }
                 outbatch.add(data);
+
             } catch (ClassNotFoundException cnf) {
-                System.err.println("Scan:Class not found for reading file  " + cnf);
+                System.err.println("Sort:Class not found for reading file  " + cnf);
                 System.exit(1);
             } catch (EOFException EOF) {
                 /** At this point incomplete page is sent and at next call it considered
@@ -75,7 +82,7 @@ public class ExternalSorter extends Operator {
                 eos = true;
                 return outbatch;
             } catch (IOException e) {
-                System.err.println("Scan:Error reading " + e);
+                System.err.println("Sort:Error reading " + e);
                 System.exit(1);
             }
         }
@@ -83,8 +90,11 @@ public class ExternalSorter extends Operator {
         return outbatch;
 }
 
-
     public boolean open() {
+
+        if (!base.open())
+            return false;
+
         eos = false;  // Since the stream is just opened
         start = 0;    // Set the cursor to starting position in input buffer
 
@@ -100,21 +110,16 @@ public class ExternalSorter extends Operator {
         }
 
         this.attributeIndexes = new ArrayList<>();
-
-        System.out.println(schema);
-        System.out.println(base);
         for (Attribute a : attributes) {
             attributeIndexes.add(schema.indexOf(a));
         }
 
-
-        if (!base.open())
-            return false;
-
         generateSortedRuns();
 
         // Merge sorted runs
-        return mergeSortedRuns(sortedRuns).size() == 1;
+        sortedRuns = mergeSortedRuns(sortedRuns);
+        return sortedRuns.size() == 1;
+
     }
 
     private boolean isFinishedMerging(ArrayList<SortedRun> sortedRuns, int start, int end) {
@@ -125,6 +130,7 @@ public class ExternalSorter extends Operator {
         Batch batch;
         buffers = new ArrayList<>();
         System.out.println(numOfBuff);
+        int k = 0;
         while ((batch = base.next()) != null) {
 
             for (int i = 0; i < numOfBuff; i++) {
@@ -138,10 +144,25 @@ public class ExternalSorter extends Operator {
                     break;
                 }
             }
-            System.out.print("hoho ");
-            System.out.println(buffers.size());
+//            System.out.print("hoho ");
+//            System.out.println(buffers.size());
 
-            sortedRuns.add(new SortedRun(buffers, attributeIndexes));
+            SortedRun sr = new SortedRun(buffers, attributeIndexes);
+            sortedRuns.add(sr);
+
+            String filename = "sortedRun-"+k;
+            try {
+                ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream(filename));
+                for (Tuple t: sr.getSortedTuples()) {
+                    outputStream.writeObject(t);
+                }
+
+                outputStream.close();
+            } catch (IOException io) {
+                System.out.println("io error");
+            }
+
+            k++;
         }
     }
 
@@ -160,8 +181,16 @@ public class ExternalSorter extends Operator {
                 // Iterate through numOfBuff - 1 sorted runs at a time
                 for (int i = 0; i < numOfBuff - 1 && i < sortedRuns.size(); i++) {
 
-                    if (sortedRuns.get(i).getSortedTuples().isEmpty()) {
-                        continue;
+//                    if (sortedRuns.get(i).getSortedTuples().isEmpty()) {
+//                        continue;
+//                    }
+
+                    try {
+                        in = new ObjectInputStream(new FileInputStream(filename));
+                        eos = false;
+                    } catch (IOException io) {
+                        System.err.println("NestedJoin:error in reading the file");
+                        System.exit(1);
                     }
 
                     curr = sortedRuns.get(i);
@@ -172,13 +201,14 @@ public class ExternalSorter extends Operator {
                     if (SortedRun.compareTuples(temp, smallestTuple, attributeIndexes) < 0) {
                         smallest = sortedRuns.get(i);
                         smallestTuple = temp;
+                        System.out.println("SORTINGGGGGGG");
                     }
                 }
 
                 sortedTuples.add(smallest.removeFromTuples(0));
 
                 // Remove merged sorted runs
-                for (int j = 0; j < numOfBuff - 1; j++) {
+                for (int j = 0; j < numOfBuff - 1 && !sortedRuns.isEmpty(); j++) {
                     sortedRuns.remove(0);
                 }
             }
@@ -191,11 +221,12 @@ public class ExternalSorter extends Operator {
 
     public Object clone() {
         Operator newbase = (Operator) base.clone();
-        int numOfBuff = BufferManager.getNumberOfBuffer();
+        int numOfBuff = BufferManager.getBuffersPerJoin();
+        System.out.println(numOfBuff);
         ArrayList<Attribute> newattr = new ArrayList<>();
         for (int i = 0; i < attributes.size(); ++i)
             newattr.add((Attribute) attributes.get(i).clone());
-        ExternalSorter newsorter = new ExternalSorter(optype, newbase, numOfBuff, newattr, tabname);
+        Sort newsorter = new Sort(optype, newbase, numOfBuff, newattr, tabname);
         newsorter.setSchema((Schema) newbase.getSchema().clone());
         return newsorter;
     }

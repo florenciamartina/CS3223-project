@@ -199,7 +199,7 @@ public class RandomInitialPlan {
         System.out.println(joinlist);
         System.out.println(projectlist);
         String tabname = fromlist.get(0);
-        ExternalSorter op = new ExternalSorter(OpType.EXTERNALSORT, root, 100, groupbylist, tabname);
+        Sort op = new Sort(OpType.EXTERNALSORT, root, nOfBuffer, groupbylist, tabname);
         op.setSchema(root.getSchema());
         root = op;
 
