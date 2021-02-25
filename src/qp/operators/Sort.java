@@ -63,6 +63,8 @@ public class Sort extends Operator {
 
     public boolean open() {
 
+        System.out.println("ascending" + this.isAsc);
+
         // Base is to be materialized for Sort to perform
         if (!base.open()) {
             return false;
@@ -156,7 +158,9 @@ public class Sort extends Operator {
                 }
 
                 // Sort the tuples and generate sorted run
-                SortedRun sr = new SortedRun(tuples, attributeIndexes);
+                SortedRun sr = isAsc
+                    ? new SortedRun(tuples, attributeIndexes)
+                    : new SortedRun(tuples, attributeIndexes, false);
                 sortedRuns.add(sr);
 
                 // Write sorted runs

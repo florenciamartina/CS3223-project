@@ -232,9 +232,9 @@ public class RandomInitialPlan {
 
     public void createOrderByOp() {
         int nOfBuffer = BufferManager.getNumberOfBuffer();
-
+        System.out.println(orderbylist.toString());
         String tabname = fromlist.get(0);
-        GroupBy op = new GroupBy(root, nOfBuffer, orderbylist);
+        OrderBy op = new OrderBy(root, nOfBuffer, orderbylist, sqlquery.isAsc());
         op.setSchema(root.getSchema());
         root = op;
     }
