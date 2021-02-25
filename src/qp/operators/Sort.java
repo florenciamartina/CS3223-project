@@ -18,51 +18,38 @@ public class Sort extends Operator {
 
     int batchSize;  // Number of tuples per outbatch
     Operator base;
-    int numOfBuff;  // Number of block
     ArrayList<Integer> attributeIndexes;
     ArrayList<Attribute> attributes;
-    String tabname;
-    String filename;       // Corresponding file name
     boolean isAsc;
     ObjectInputStream in;  // Input file being scanned
-    int totalSize = 0;
-
 
     /**
      * The following fields are required during
      * * execution of the Sort operator
      **/
     boolean eos;                // Indicate whether end of stream is reached or not
-    ArrayList<Batch> inBatch;   // This is the current input buffer
     Batch outBatch;             // This is the current output buffer
 
     // Sorting attributes
+    int numOfBuff;
     int numSortedRuns;
     ArrayList<SortedRun> sortedRuns;
+    int totalSize = 0;          // debugging purposes
 
     /**
      * constructor
      **/
-    public Sort(int type, Operator base, int numOfBuff, ArrayList<Attribute> attributeList, String tabname) {
-        super(type);
+    public Sort(Operator base, int numOfBuff, ArrayList<Attribute> attributeList, boolean isAsc) {
+        super(OpType.EXTERNALSORT);
         this.base = base;
         this.schema = base.schema;
         this.numOfBuff = numOfBuff;
         this.attributes = attributeList;
-        this.tabname = tabname;
-        this.isAsc = true;
-        filename = tabname + ".tbl";
+        this.isAsc = isAsc;
     }
 
-    public Sort(int type, Operator base, int numOfBuff, ArrayList<Attribute> attributeList, String tabname, boolean isAsc) {
-        super(type);
-        this.base = base;
-        this.schema = base.schema;
-        this.numOfBuff = numOfBuff;
-        this.attributes = attributeList;
-        this.tabname = tabname;
-        this.isAsc = isAsc;
-        filename = tabname + ".tbl";
+    public Sort(Operator base, int numOfBuff, ArrayList<Attribute> attributeList) {
+        this(base, numOfBuff, attributeList, true);
     }
 
     public boolean open() {
@@ -83,14 +70,6 @@ public class Sort extends Operator {
             attributeIndexes.add(schema.indexOf(a));
         }
 
-        // Read the table
-        try {
-            in = new ObjectInputStream(new FileInputStream(filename));
-        } catch (Exception e) {
-            System.err.println(" Error reading " + filename);
-            return false;
-        }
-
         numSortedRuns = generateSortedRuns();
 
         sortedRuns = mergeSortedRuns();
@@ -107,37 +86,16 @@ public class Sort extends Operator {
             return null;
         }
 
-        inBatch = new ArrayList<>();
-
         /** An output buffer is initiated **/
         outBatch = new Batch(batchSize);
 
         while (!outBatch.isFull()) {
-            for (Tuple t: sortedRuns.get(0).getSortedTuples()) {
-                outBatch.add(t);
-                totalSize++;
+            if (sortedRuns.get(0).isEmpty()) {
+                eos = true;
+                return outBatch;
             }
 
-            eos = true;
-            return outBatch;
-
-//            try {
-//                Tuple data = (Tuple) in.readObject();
-//                outBatch.add(data);
-//                totalSize++;
-//            } catch (ClassNotFoundException cnf) {
-//                System.err.println("Sort:Class not found for reading file  " + cnf);
-//                System.exit(1);
-//            } catch (EOFException EOF) {
-//                /** At this point incomplete page is sent and at next call it considered
-//                 ** as end of file
-//                 **/
-//                eos = true;
-//                return outBatch;
-//            } catch (IOException e) {
-//                System.err.println("Sort:Error reading " + e);
-//                System.exit(1);
-//            }
+            outBatch.add(sortedRuns.get(0).poll());
         }
 
         return outBatch;
@@ -196,43 +154,15 @@ public class Sort extends Operator {
 
     private ArrayList<SortedRun> mergeSortedRuns() {
 
-        int pass = 1;
         while (sortedRuns.size() > 1) {
 
             Batch mergeOutput = new Batch(batchSize);
             int numOfMergedSortedRuns = Math.min(numOfBuff - 1, sortedRuns.size());
 
+            SortedRun minSortedRun;
             while (!isSortedRunsEmpty(numOfMergedSortedRuns)) {
-
-                // Find smallest value among (numOfBuff - 1) sorted runs
-                Tuple minTuple = null;
-                SortedRun minSortedRun = null;
-                int compareResult;
-                for (int i = 0; i < numOfMergedSortedRuns; i++) {
-
-                    if (sortedRuns.get(i).isEmpty()) {
-                        continue;
-                    }
-
-                    Tuple currTuple = sortedRuns.get(i).peek();
-
-                    if (minTuple == null) {
-                        minTuple = currTuple;
-                        minSortedRun = sortedRuns.get(i);
-                    }
-
-                    compareResult = SortedRun.compareTuples(currTuple, minTuple, attributeIndexes);
-
-                    if (compareResult >= 0) {
-                        continue;
-                    }
-
-                    minTuple = currTuple;
-                    minSortedRun = sortedRuns.get(i);
-                }
-
-                mergeOutput.add(minTuple);
-                minSortedRun.poll();
+                minSortedRun = findMinimumSortedRun(numOfMergedSortedRuns);
+                mergeOutput.add(minSortedRun.poll());
             }
 
             sortedRuns.removeIf(SortedRun::isEmpty);
@@ -240,6 +170,36 @@ public class Sort extends Operator {
         }
 
         return sortedRuns;
+    }
+
+    private SortedRun findMinimumSortedRun(int numOfMergedSortedRuns) {
+        Tuple minTuple = null;
+        SortedRun minSortedRun = null;
+        int compareResult;
+        for (int i = 0; i < numOfMergedSortedRuns; i++) {
+
+            if (sortedRuns.get(i).isEmpty()) {
+                continue;
+            }
+
+            Tuple currTuple = sortedRuns.get(i).peek();
+
+            if (minTuple == null) {
+                minTuple = currTuple;
+                minSortedRun = sortedRuns.get(i);
+            }
+
+            compareResult = SortedRun.compareTuples(currTuple, minTuple, attributeIndexes);
+
+            if (compareResult >= 0) {
+                continue;
+            }
+
+            minTuple = currTuple;
+            minSortedRun = sortedRuns.get(i);
+        }
+
+        return minSortedRun;
     }
 
     public Batch sortTupleAsc(int numOfMergedSortedRuns, Batch mergeOutput) {
@@ -315,7 +275,7 @@ public class Sort extends Operator {
         ArrayList<Attribute> newattr = new ArrayList<>();
         for (int i = 0; i < attributes.size(); ++i)
             newattr.add((Attribute) attributes.get(i).clone());
-        Sort newsorter = new Sort(optype, newbase, numOfBuff, newattr, tabname);
+        Sort newsorter = new Sort(newbase, numOfBuff, newattr);
         newsorter.setSchema((Schema) newbase.getSchema().clone());
         return newsorter;
     }

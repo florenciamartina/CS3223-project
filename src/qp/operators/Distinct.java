@@ -71,7 +71,7 @@ public class Distinct extends Operator {
 
         System.out.println(attributes.toString());
 
-        sortBase = new Sort(OpType.EXTERNALSORT, base, numOfBuffer, attributes, tabname);
+        sortBase = new Sort(base, numOfBuffer, attributes);
         return sortBase.open();
     }
 
