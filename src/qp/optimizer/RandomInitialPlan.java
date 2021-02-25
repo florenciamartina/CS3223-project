@@ -48,26 +48,11 @@ public class RandomInitialPlan {
      **/
     public Operator prepareInitialPlan() {
 
-
         tab_op_hash = new HashMap<>();
         createScanOp();
         createSelectOp();
         if (numJoin != 0) {
             createJoinOp();
-        }
-
-        if (sqlquery.isDistinct()) {
-            createDistinctOp();
-            System.out.println("PROJECT DISTINCT!!");
-        } else {
-            createProjectOp();
-        }
-
-        if (sqlquery.isDistinct()) {
-//            System.err.println("Distinct is not implemented.");
-            System.out.println("DISTINCT!!");
-//            System.exit(1);
-//            createDistinctOp();
         }
 
         if (sqlquery.getGroupByList().size() > 0) {
@@ -79,6 +64,13 @@ public class RandomInitialPlan {
         if (sqlquery.getOrderByList().size() > 0) {
             System.err.println("Orderby is not implemented.");
             System.exit(1);
+        }
+
+        createProjectOp();
+
+        if (sqlquery.isDistinct()) {
+            createDistinctOp();
+            System.out.println("DISTINCT!!");
         }
 
         return root;
@@ -291,21 +283,27 @@ public class RandomInitialPlan {
     }
 
     public void createDistinctOp() {
-        Operator base = root;
+        Operator op;
         String tabname = fromlist.get(0);
         Schema newSchema;
+        int nOfBuffer = BufferManager.getNumberOfBuffer();
 
-        if (projectlist == null)
-            projectlist = new ArrayList<>();
-            root = new Distinct(base, OpType.DISTINCT, tabname);
-            newSchema = base.getSchema();
-            root.setSchema(newSchema);
+        if (projectlist == null) {
+            op = new Distinct(root, OpType.DISTINCT, nOfBuffer, tabname);
+            op.setSchema(root.getSchema());
+            root = op;
+//            newSchema = base.getSchema();
+//            root.setSchema(newSchema);
+        }
 
         if (!projectlist.isEmpty()) {
-            root = new Distinct(base, OpType.DISTINCT, projectlist, tabname);
-            newSchema = base.getSchema().subSchema(projectlist);
-            root.setSchema(newSchema);
+            op = new Distinct(root, OpType.DISTINCT, nOfBuffer, projectlist, tabname);
+            op.setSchema(root.getSchema());
+            root = op;
+//            newSchema = base.getSchema();
+//            root.setSchema(newSchema);
         }
+
     }
 
     private void modifyHashtable(Operator old, Operator newop) {
