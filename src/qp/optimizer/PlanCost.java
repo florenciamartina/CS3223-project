@@ -110,7 +110,7 @@ public class PlanCost {
         Schema leftschema = node.getLeft().getSchema();
         Schema rightschema = node.getRight().getSchema();
 
-        /** Get size of the tuple in output & correspondigly calculate
+        /** Get size of the tuple in output & correspondingly calculate
          ** buffer capacity, i.e., number of tuples per page **/
         long tuplesize = node.getSchema().getTupleSize();
         long outcapacity = Math.max(1, Batch.getPageSize() / tuplesize);
@@ -148,6 +148,9 @@ public class PlanCost {
         switch (joinType) {
             case JoinType.NESTEDJOIN:
                 joincost = leftpages * rightpages;
+                break;
+            case JoinType.BLOCKNESTED:
+                joincost = leftpages + (long) Math.ceil(1.0 * leftpages / numbuff) * rightpages;
                 break;
             default:
                 System.out.println("join type is not supported");
