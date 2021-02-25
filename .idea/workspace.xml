@@ -24,14 +24,8 @@
   <component name="ChangeListManager">
     <list default="true" id="3dc5fae0-e5c9-48b9-8203-7ff7ec6daf6d" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/classes/qp/operators/Distinct.class" beforeDir="false" afterPath="$PROJECT_DIR$/classes/qp/operators/Distinct.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/classes/qp/operators/GroupBy.class" beforeDir="false" afterPath="$PROJECT_DIR$/classes/qp/operators/GroupBy.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/classes/qp/operators/Sort.class" beforeDir="false" afterPath="$PROJECT_DIR$/classes/qp/operators/Sort.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/qp/operators/Distinct.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/qp/operators/Distinct.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/qp/operators/GroupBy.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/qp/operators/GroupBy.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/qp/operators/Sort.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/qp/operators/Sort.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/qp/optimizer/RandomInitialPlan.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/qp/optimizer/RandomInitialPlan.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/testcases/query11.sql" beforeDir="false" afterPath="$PROJECT_DIR$/testcases/query11.sql" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
