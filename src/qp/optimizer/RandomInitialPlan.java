@@ -22,6 +22,7 @@ public class RandomInitialPlan {
     ArrayList<Condition> selectionlist;   // List of select conditons
     ArrayList<Condition> joinlist;        // List of join conditions
     ArrayList<Attribute> groupbylist;
+    ArrayList<Attribute> orderbylist;
     int numJoin;            // Number of joins in this query
     HashMap<String, Operator> tab_op_hash;  // Table name to the Operator
     Operator root;          // Root of the query plan tree
@@ -33,6 +34,8 @@ public class RandomInitialPlan {
         selectionlist = sqlquery.getSelectionList();
         joinlist = sqlquery.getJoinList();
         groupbylist = sqlquery.getGroupByList();
+        orderbylist = sqlquery.getOrderByList();
+
         numJoin = joinlist.size();
     }
 
@@ -62,8 +65,9 @@ public class RandomInitialPlan {
         }
 
         if (sqlquery.getOrderByList().size() > 0) {
-            System.err.println("Orderby is not implemented.");
-            System.exit(1);
+//            System.err.println("Orderby is not implemented.");
+//            System.exit(1);
+            createOrderByOp();
         }
 
         createProjectOp();
@@ -142,92 +146,15 @@ public class RandomInitialPlan {
             root = op1;
     }
 
-//    /**
-//     * Create Selection Operators for each of the
-//     * * selection condition mentioned in Condition list
-//     **/
-//    public void createDistinctOp() {
-//        Distinct op1 = null;
-//        op1 = new Distinct(root, OpType.DISTINCT);
-//        root = op1;
-//        //createSelectOp();
-//
-////        for (int j = 0; j < projectlist.size(); ++j) {
-////            for (int i = 0; i < selectionlist.size(); ++i) {
-////                Condition cn = selectionlist.get(i);
-////                if (cn.getOpType() == Condition.DISTINCT) {
-////                    String tabname = cn.getLhs().getTabName();
-////                    Operator tempop = (Operator) tab_op_hash.get(tabname);
-////
-////                    if (!projectlist.isEmpty()) {
-////                        op1 = new Distinct(tempop, cn, OpType.DISTINCT, projectlist);
-////                    } else {
-////                        op1 = new Distinct(tempop, cn, OpType.DISTINCT);
-////                    }
-////                    /** set the schema same as base relation **/
-////                    op1.setSchema(tempop.getSchema());
-////                    modifyHashtable(tempop, op1);
-////                }
-////            }
-////        }
-////
-////        /** The last selection is the root of the plan tre
-////         ** constructed thus far
-////         **/
-////        if (selectionlist.size() != 0)
-////            root = op1;
-//    }
-
     public void createGroupByOp() {
-//        ExternalSorter op1 = null;
         int nOfBuffer = BufferManager.getNumberOfBuffer();
-//        op1 = new ExternalSorter(OpType.EXTERNALSORT, root, nOfBuffer, groupbylist);
-//        System.out.println(root);
-//        op1.setSchema(root.getSchema());
 
-        System.out.println(selectionlist);
-        System.out.println(fromlist);
-        System.out.println(groupbylist);
-        System.out.println(joinlist);
-        System.out.println(projectlist);
         String tabname = fromlist.get(0);
         GroupBy op = new GroupBy(root, nOfBuffer, groupbylist);
         op.setSchema(root.getSchema());
         root = op;
 
-//        for (int j = 0; j < fromlist.size(); ++j) {
-//            String tabname = fromlist.get(0);
-//            System.out.println(tabname);
-////            String tabname = cn.getLhs().getTabName();
-//            Operator tempop = (Operator) tab_op_hash.get(tabname);
-//            System.out.println(tempop);
-//
-////            Operator base = root;
-//            if (groupbylist == null)
-//                groupbylist = new ArrayList<Attribute>();
-//            if (!groupbylist.isEmpty()) {
-//                root = new ExternalSorter(OpType.EXTERNALSORT, tempop, nOfBuffer, groupbylist);
-//                Schema newSchema = tempop.getSchema();
-//                root.setSchema(newSchema);
-//            }
-//        }
-//        op1 = sorter;
-
-//        for (int j = 0; j < selectionlist.size(); ++j) {
-//            Condition cn = selectionlist.get(j);
-//
-//            if (cn.getOpType() == Condition.GROUPBY) {
-//                String tabname = cn.getLhs().getTabName();
-//                Operator tempop = (Operator) tab_op_hash.get(tabname);
-//                op1 = new GroupBy(tempop, groupbylist, OpType.GROUPBY);
-//                /** set the schema same as base relation **/
-//                op1.setSchema(tempop.getSchema());
-//                modifyHashtable(tempop, op1);
-//            }
-//        }
     }
-
-
 
     /**
      * create join operators
@@ -293,18 +220,23 @@ public class RandomInitialPlan {
             op = new Distinct(root, OpType.DISTINCT, nOfBuffer, tabname);
             op.setSchema(root.getSchema());
             root = op;
-//            newSchema = base.getSchema();
-//            root.setSchema(newSchema);
         }
 
         if (!projectlist.isEmpty()) {
             op = new Distinct(root, OpType.DISTINCT, nOfBuffer, projectlist, tabname);
             op.setSchema(root.getSchema());
             root = op;
-//            newSchema = base.getSchema();
-//            root.setSchema(newSchema);
         }
 
+    }
+
+    public void createOrderByOp() {
+        int nOfBuffer = BufferManager.getNumberOfBuffer();
+
+        String tabname = fromlist.get(0);
+        GroupBy op = new GroupBy(root, nOfBuffer, orderbylist);
+        op.setSchema(root.getSchema());
+        root = op;
     }
 
     private void modifyHashtable(Operator old, Operator newop) {
