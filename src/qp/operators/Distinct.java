@@ -4,27 +4,25 @@
 
 package qp.operators;
 
-import qp.optimizer.BufferManager;
 import qp.utils.*;
-import java.util.HashSet;
 import java.util.ArrayList;
 
 public class Distinct extends Operator {
 
-    ArrayList<Tuple> distinctTuples; // Set of Distinct tuples
     ArrayList<Attribute> attributes;
     ArrayList<Integer> attributeIndexes;
     Operator base;
     String tabname;
-    int numOfBuffer;
+    int numOfBuffer = 3;
     int batchsize;
 
     boolean eos;     // Indicate whether end of stream is reached or not
     Batch inbatch;   // This is the current input buffer
     Batch outbatch;  // This is the current output buffer
     int start;       // Cursor position in the input buffer
-    int currElementIdx = 0;
+    int currInputIdx = 0;
     Sort sortBase;
+    Tuple prevTuple = null; // Keep track of previous tuple
 
     /**
      * constructor
@@ -32,8 +30,8 @@ public class Distinct extends Operator {
     public Distinct(Operator base, int type, ArrayList<Attribute> attributes, String tabname) {
         super(type);
         this.base = base;
-        this.distinctTuples = new ArrayList<>();
         this.attributes = attributes;
+        this.attributeIndexes = new ArrayList<>();
         this.tabname = tabname;
 
     }
@@ -41,10 +39,9 @@ public class Distinct extends Operator {
     public Distinct(Operator base, int type, String tabname) {
         super(type);
         this.base = base;
-        this.distinctTuples = new ArrayList<>();
         this.attributes = new ArrayList<>();
-        this.tabname = tabname;
         this.attributeIndexes = new ArrayList<>();
+        this.tabname = tabname;
     }
 
     public Operator getBase() {
@@ -66,6 +63,11 @@ public class Distinct extends Operator {
         int tuplesize = schema.getTupleSize();
         batchsize = Batch.getPageSize() / tuplesize;
 
+        for (int i = 0; i < attributes.size(); i++) {
+            Integer idx = schema.indexOf(this.attributes.get(i));
+            this.attributeIndexes.add(idx);
+        }
+
         System.out.println(attributes.toString());
 
         sortBase = new Sort(OpType.EXTERNALSORT, base, numOfBuffer, attributes, tabname);
@@ -81,6 +83,8 @@ public class Distinct extends Operator {
         if (eos) {
             close();
             return null;
+        } else if (inbatch == null) {
+            inbatch = sortBase.next();
         }
 
         /** An output buffer is initiated **/
@@ -92,23 +96,24 @@ public class Distinct extends Operator {
         while (!outbatch.isFull()) {
 
             /** There is no more incoming pages from base operator **/
-            if (inbatch == null || inbatch.size() <= currElementIdx) {
+            if (inbatch == null || inbatch.size() <= start) {
                 eos = true;
                 return outbatch;
             }
 
-           Tuple currTuple = inbatch.get(currElementIdx);
-            if (distinctTuples.isEmpty() || isDistinct(currTuple, distinctTuples.get(distinctTuples.size() - 1))) {
-                distinctTuples.add(currTuple);
+            Tuple currTuple = inbatch.get(currInputIdx);
+            if (prevTuple == null || isDistinct(currTuple, prevTuple)) {
+                outbatch.add(currTuple);
+                prevTuple = currTuple;
             }
-            currElementIdx++;
+            currInputIdx++;
 
-            if (currElementIdx == batchsize)
+            if (currInputIdx == batchsize) {
                 inbatch = sortBase.next();
-                currElementIdx = 0;
+                currInputIdx = 0;
             }
-
-            return outbatch;
+        }
+        return outbatch;
     }
 
 
@@ -117,10 +122,7 @@ public class Distinct extends Operator {
      **/
     protected boolean isDistinct(Tuple tuple1, Tuple tuple2) {
         int result;
-        for (int i = 0; i < attributes.size(); i++) {
-            Integer idx = schema.indexOf(this.attributes.get(i));
-            this.attributeIndexes.add(idx);
-        }
+
 
         if (!this.attributeIndexes.isEmpty()) {
             for (Integer i : attributeIndexes) {
@@ -141,13 +143,11 @@ public class Distinct extends Operator {
      * Close the operator
      */
     public boolean close() {
-        inbatch = null;
-        sortBase.close();
-        return true;
+        return sortBase.close();
     }
 
     public Object clone() {
-        Operator newbase = (Operator) sortBase.clone();
+        Operator newbase = (Operator) base.clone();
 //        int numOfBuff = BufferManager.getBuffersPerJoin();
         ArrayList<Attribute> newattr = new ArrayList<>();
         for (int i = 0; i < attributes.size(); ++i)

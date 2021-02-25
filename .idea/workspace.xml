@@ -25,17 +25,10 @@
     <list default="true" id="3dc5fae0-e5c9-48b9-8203-7ff7ec6daf6d" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/classes/qp/operators/Distinct.class" beforeDir="false" afterPath="$PROJECT_DIR$/classes/qp/operators/Distinct.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/classes/qp/operators/GroupBy.class" beforeDir="false" afterPath="$PROJECT_DIR$/classes/qp/operators/GroupBy.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/classes/qp/operators/Sort.class" beforeDir="false" afterPath="$PROJECT_DIR$/classes/qp/operators/Sort.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/classes/qp/optimizer/PlanCost.class" beforeDir="false" afterPath="$PROJECT_DIR$/classes/qp/optimizer/PlanCost.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/classes/qp/optimizer/RandomInitialPlan.class" beforeDir="false" afterPath="$PROJECT_DIR$/classes/qp/optimizer/RandomInitialPlan.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/classes/qp/utils/Tuple.class" beforeDir="false" afterPath="$PROJECT_DIR$/classes/qp/utils/Tuple.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/qp/operators/Distinct.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/qp/operators/Distinct.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/qp/operators/GroupBy.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/qp/operators/GroupBy.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/qp/operators/Sort.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/qp/operators/Sort.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/qp/optimizer/PlanCost.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/qp/optimizer/PlanCost.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/qp/optimizer/RandomInitialPlan.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/qp/optimizer/RandomInitialPlan.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/qp/utils/Tuple.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/qp/utils/Tuple.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/qp/operators/ProjectDistinct.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/testcases/query9.out" beforeDir="false" afterPath="$PROJECT_DIR$/testcases/query9.out" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/testcases/query9.sql" beforeDir="false" afterPath="$PROJECT_DIR$/testcases/query9.sql" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -143,6 +136,10 @@
       <screen x="0" y="0" width="1536" height="824" />
     </state>
     <state x="462" y="144" width="611" height="536" key="find.popup/0.0.1536.824@0.0.1536.824" timestamp="1614225674274" />
+    <state x="674" y="190" key="run.anything.popup" timestamp="1614226553837">
+      <screen x="0" y="0" width="1536" height="824" />
+    </state>
+    <state x="674" y="190" key="run.anything.popup/0.0.1536.824@0.0.1536.824" timestamp="1614226553837" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
