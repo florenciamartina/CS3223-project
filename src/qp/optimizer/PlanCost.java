@@ -80,6 +80,8 @@ public class PlanCost {
             return 1;
         } else if (node.getOpType() == OpType.EXTERNALSORT) {
             return 1;
+        } else if (node.getOpType() == OpType.DISTINCT) {
+            return 1;
         }
         System.out.println("operator is not supported");
         isFeasible = false;

@@ -4,44 +4,48 @@
 
 package qp.operators;
 
+import qp.optimizer.BufferManager;
 import qp.utils.*;
 import java.util.HashSet;
 import java.util.ArrayList;
 
 public class Distinct extends Operator {
 
-    HashSet<Tuple> distinctTuples; // Set of Distinct tuples
-//    ArrayList<Attribute> attributes;
+    ArrayList<Tuple> distinctTuples; // Set of Distinct tuples
+    ArrayList<Attribute> attributes;
+    ArrayList<Integer> attributeIndexes;
     Operator base;
+    String tabname;
+    int numOfBuffer;
     int batchsize;
+
     boolean eos;     // Indicate whether end of stream is reached or not
     Batch inbatch;   // This is the current input buffer
     Batch outbatch;  // This is the current output buffer
     int start;       // Cursor position in the input buffer
+    int currElementIdx = 0;
+    Sort sortBase;
 
     /**
      * constructor
      **/
-    public Distinct(Operator base, int type) {
+    public Distinct(Operator base, int type, ArrayList<Attribute> attributes, String tabname) {
         super(type);
         this.base = base;
-        this.distinctTuples = new HashSet<>();
-//        this.attributes = attributes;
-        System.out.println("jo");
-    }
-//
-//    public Distinct(Operator base, Condition con, int type) {
-//        super(base, con, type);
-//        this.distinctTuples = new HashSet<>();
-//        this.attributes = new ArrayList<>();
-//        System.out.println("jo");
-//    }
+        this.distinctTuples = new ArrayList<>();
+        this.attributes = attributes;
+        this.tabname = tabname;
 
-//    public Distinct(ArrayList<Attribute> attributes, Operator base, int optype) {
-//        super(optype);
-//        this.base = base;
-//        this.attributes = attributes;
-//    }
+    }
+
+    public Distinct(Operator base, int type, String tabname) {
+        super(type);
+        this.base = base;
+        this.distinctTuples = new ArrayList<>();
+        this.attributes = new ArrayList<>();
+        this.tabname = tabname;
+        this.attributeIndexes = new ArrayList<>();
+    }
 
     public Operator getBase() {
         return base;
@@ -62,10 +66,10 @@ public class Distinct extends Operator {
         int tuplesize = schema.getTupleSize();
         batchsize = Batch.getPageSize() / tuplesize;
 
-        if (base.open())
-            return true;
-        else
-            return false;
+        System.out.println(attributes.toString());
+
+        sortBase = new Sort(OpType.EXTERNALSORT, base, numOfBuffer, attributes, tabname);
+        return sortBase.open();
     }
 
     /**
@@ -74,7 +78,6 @@ public class Distinct extends Operator {
      * * NOTE: This operation is performed on the fly
      **/
     public Batch next() {
-        int i = 0;
         if (eos) {
             close();
             return null;
@@ -87,119 +90,72 @@ public class Distinct extends Operator {
          ** the output buffer is full
          **/
         while (!outbatch.isFull()) {
-            if (start == 0) {
-                inbatch = base.next();
-                /** There is no more incoming pages from base operator **/
-                if (inbatch == null) {
-                    eos = true;
-                    return outbatch;
-                }
+
+            /** There is no more incoming pages from base operator **/
+            if (inbatch == null || inbatch.size() <= currElementIdx) {
+                eos = true;
+                return outbatch;
             }
 
-            /** Continue this for loop until this page is fully observed
-             ** or the output buffer is full
-             **/
-            for (i = start; i < inbatch.size() && (!outbatch.isFull()); ++i) {
-                Tuple present = inbatch.get(i);
-                /** If the condition is satisfied then
-                 ** this tuple is added tot he output buffer
-                 **/
-                System.out.println(isDistinct(present));
-                if (isDistinct(present))
-                    outbatch.add(present);
+           Tuple currTuple = inbatch.get(currElementIdx);
+            if (distinctTuples.isEmpty() || isDistinct(currTuple, distinctTuples.get(distinctTuples.size() - 1))) {
+                distinctTuples.add(currTuple);
+            }
+            currElementIdx++;
+
+            if (currElementIdx == batchsize)
+                inbatch = sortBase.next();
+                currElementIdx = 0;
             }
 
-            /** Modify the cursor to the position requierd
-             ** when the base operator is called next time;
-             **/
-            if (i == inbatch.size())
-                start = 0;
-            else
-                start = i;
-        }
-        return outbatch;
+            return outbatch;
     }
 
 
     /**
      * To check whether the current tuple is already present
      **/
-    protected boolean isDistinct(Tuple tuple) {
+    protected boolean isDistinct(Tuple tuple1, Tuple tuple2) {
+        int result;
+        for (int i = 0; i < attributes.size(); i++) {
+            Integer idx = schema.indexOf(this.attributes.get(i));
+            this.attributeIndexes.add(idx);
+        }
 
-//        ArrayList<Integer> indexes = new ArrayList<>();
+        if (!this.attributeIndexes.isEmpty()) {
+            for (Integer i : attributeIndexes) {
+                result = Tuple.compareTuples(tuple1, tuple2, i);
 
-//        for (int i = 0; i < attributes.size(); i++) {
-//            Attribute currAttr = attributes.get(i);
-//            int idx = schema.indexOf(currAttr);
-//            indexes.add(idx);
-//        }
-
-        if (distinctTuples.contains(tuple)) {
+                if (result != 0) {
+                    return true;
+                }
+            }
             return false;
+
         } else {
-            distinctTuples.add(tuple);
-            return true;
+            return tuple1.equals(tuple2);
         }
     }
 
-    public Object clone() {
-        Operator newbase = (Operator) base.clone();
-        Distinct newdist = new Distinct(newbase, optype);
-        newdist.setSchema((Schema) newbase.getSchema().clone());
-        return newdist;
+    /**
+     * Close the operator
+     */
+    public boolean close() {
+        inbatch = null;
+        sortBase.close();
+        return true;
     }
 
-//    /**
-//     * returns a batch of Distinct tuples
-//     * * NOTE: This operation is performed on the fly
-//     **/
-//    @Override
-//    public Batch next() {
-//        int i = 0;
-//
-//        if (eos) {
-//            close();
-//            return null;
-//        }
-//
-//        /** An output buffer is initiated **/
-//        outbatch = new Batch(batchsize);
-//        /** keep on checking the incoming pages until
-//         ** the output buffer is full
-//         **/
-//        while (!outbatch.isFull()) {
-//            if (start == 0) {
-//                inbatch = base.next();
-//                /** There is no more incoming pages from base operator **/
-//                if (inbatch == null) {
-//                    eos = true;
-//                    return outbatch;
-//                }
-//            }
-//
-//            /** Continue this for loop until this page is fully observed
-//             ** or the output buffer is full
-//             **/
-//            for (i = start; i < inbatch.size() && (!outbatch.isFull()); ++i) {
-//                Tuple present = inbatch.get(i);
-//                /** If the condition is satisfied then
-//                 ** this tuple is added tot he output buffer
-//                 **/
-//                if (isDistinct(present) && checkCondition(present))
-//                    outbatch.add(present);
-//            }
-//
-//            /** Modify the cursor to the position required
-//             ** when the base operator is called next time;
-//             **/
-//            if (i == inbatch.size())
-//                start = 0;
-//            else
-//                start = i;
-//        }
-//
-//        System.out.println(distinctTuples);
-//        return outbatch;
-//    }
+    public Object clone() {
+        Operator newbase = (Operator) sortBase.clone();
+//        int numOfBuff = BufferManager.getBuffersPerJoin();
+        ArrayList<Attribute> newattr = new ArrayList<>();
+        for (int i = 0; i < attributes.size(); ++i)
+            newattr.add((Attribute) attributes.get(i).clone());
+        Distinct newDistinct = new Distinct(newbase, optype, newattr, tabname);
+        newDistinct.setSchema((Schema) newbase.getSchema().clone());
+        return newDistinct;
+    }
 
+//
 }

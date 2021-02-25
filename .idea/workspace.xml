@@ -23,38 +23,19 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="3dc5fae0-e5c9-48b9-8203-7ff7ec6daf6d" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/COMPONENT.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/COMPONENT.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CUSTOMER.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/CUSTOMER.stat" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/CUSTOMER.tbl" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/CUSTOMER.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/qp/operators/Distinct.class" beforeDir="false" afterPath="$PROJECT_DIR$/classes/qp/operators/Distinct.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/qp/operators/GroupBy.class" beforeDir="false" afterPath="$PROJECT_DIR$/classes/qp/operators/GroupBy.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/classes/qp/operators/Sort.class" beforeDir="false" afterPath="$PROJECT_DIR$/classes/qp/operators/Sort.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/classes/qp/utils/Batch.class" beforeDir="false" afterPath="$PROJECT_DIR$/classes/qp/utils/Batch.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/classes/qp/utils/SortedRun.class" beforeDir="false" afterPath="$PROJECT_DIR$/classes/qp/utils/SortedRun.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/qp/optimizer/PlanCost.class" beforeDir="false" afterPath="$PROJECT_DIR$/classes/qp/optimizer/PlanCost.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/qp/optimizer/RandomInitialPlan.class" beforeDir="false" afterPath="$PROJECT_DIR$/classes/qp/optimizer/RandomInitialPlan.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/classes/qp/utils/Tuple.class" beforeDir="false" afterPath="$PROJECT_DIR$/classes/qp/utils/Tuple.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/query1.out" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/qp/operators/Distinct.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/qp/operators/Distinct.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/qp/operators/GroupBy.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/qp/operators/GroupBy.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/qp/operators/Sort.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/qp/operators/Sort.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/qp/utils/Batch.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/qp/utils/Batch.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/qp/utils/SortedRun.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/qp/utils/SortedRun.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/qp/optimizer/PlanCost.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/qp/optimizer/PlanCost.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/qp/optimizer/RandomInitialPlan.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/qp/optimizer/RandomInitialPlan.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/qp/utils/Tuple.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/qp/utils/Tuple.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/testcases/BILL.md" beforeDir="false" afterPath="$PROJECT_DIR$/testcases/BILL.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/testcases/BILL.stat" beforeDir="false" afterPath="$PROJECT_DIR$/testcases/BILL.stat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/testcases/BILL.tbl" beforeDir="false" afterPath="$PROJECT_DIR$/testcases/BILL.tbl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/testcases/BILL.txt" beforeDir="false" afterPath="$PROJECT_DIR$/testcases/BILL.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/testcases/CART.stat" beforeDir="false" afterPath="$PROJECT_DIR$/testcases/CART.stat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/testcases/CART.tbl" beforeDir="false" afterPath="$PROJECT_DIR$/testcases/CART.tbl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/testcases/CART.txt" beforeDir="false" afterPath="$PROJECT_DIR$/testcases/CART.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/testcases/CARTDETAILS.stat" beforeDir="false" afterPath="$PROJECT_DIR$/testcases/CARTDETAILS.stat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/testcases/CARTDETAILS.tbl" beforeDir="false" afterPath="$PROJECT_DIR$/testcases/CARTDETAILS.tbl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/testcases/CARTDETAILS.txt" beforeDir="false" afterPath="$PROJECT_DIR$/testcases/CARTDETAILS.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/testcases/CUSTOMER.stat" beforeDir="false" afterPath="$PROJECT_DIR$/testcases/CUSTOMER.stat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/testcases/CUSTOMER.tbl" beforeDir="false" afterPath="$PROJECT_DIR$/testcases/CUSTOMER.tbl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/testcases/CUSTOMER.txt" beforeDir="false" afterPath="$PROJECT_DIR$/testcases/CUSTOMER.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/testcases/query11.out" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/testcases/query11.sql" beforeDir="false" afterPath="$PROJECT_DIR$/testcases/query11.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/testcases/query12.out" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -114,7 +95,19 @@
       </method>
     </configuration>
   </component>
-  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="ServiceViewManager">
+    <option name="viewStates">
+      <list>
+        <serviceView>
+          <treeState>
+            <expand />
+            <select />
+          </treeState>
+        </serviceView>
+      </list>
+    </option>
+  </component>
+  <component name="SpellCheckerSettings" BundledDictionaries="0" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" Dictionaries="0" CorrectionsLimit="5" DefaultDictionary="application-level" UseSingleDictionary="true" />
   <component name="SvnConfiguration">
     <configuration />
   </component>
@@ -133,11 +126,33 @@
       <map>
         <entry key="MAIN">
           <value>
-            <State />
+            <State>
+              <option name="COLUMN_ORDER" />
+            </State>
           </value>
         </entry>
       </map>
     </option>
-    <option name="oldMeFiltersMigrated" value="true" />
+  </component>
+  <component name="WindowStateProjectService">
+    <state x="499" y="160" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog" timestamp="1614222257667">
+      <screen x="0" y="0" width="1536" height="824" />
+    </state>
+    <state x="499" y="160" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog/0.0.1536.824@0.0.1536.824" timestamp="1614222257667" />
+    <state x="462" y="144" width="611" height="536" key="find.popup" timestamp="1614225674274">
+      <screen x="0" y="0" width="1536" height="824" />
+    </state>
+    <state x="462" y="144" width="611" height="536" key="find.popup/0.0.1536.824@0.0.1536.824" timestamp="1614225674274" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/qp/operators/Sort.java</url>
+          <line>177</line>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>

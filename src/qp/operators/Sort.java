@@ -23,6 +23,7 @@ public class Sort extends Operator {
     ArrayList<Attribute> attributes;
     String tabname;
     String filename;       // Corresponding file name
+    boolean isAsc;
     ObjectInputStream in;  // Input file being scanned
     int totalSize = 0;
 
@@ -49,8 +50,19 @@ public class Sort extends Operator {
         this.numOfBuff = numOfBuff;
         this.attributes = attributeList;
         this.tabname = tabname;
+        this.isAsc = true;
         filename = tabname + ".tbl";
+    }
 
+    public Sort(int type, Operator base, int numOfBuff, ArrayList<Attribute> attributeList, String tabname, boolean isAsc) {
+        super(type);
+        this.base = base;
+        this.schema = base.schema;
+        this.numOfBuff = numOfBuff;
+        this.attributes = attributeList;
+        this.tabname = tabname;
+        this.isAsc = isAsc;
+        filename = tabname + ".tbl";
     }
 
     public boolean open() {
@@ -229,6 +241,73 @@ public class Sort extends Operator {
 
         return sortedRuns;
     }
+
+    public Batch sortTupleAsc(int numOfMergedSortedRuns, Batch mergeOutput) {
+        Tuple minTuple = null;
+        SortedRun minSortedRun = null;
+
+        int compareResult;
+        for (int i = 0; i < numOfMergedSortedRuns; i++) {
+
+            if (sortedRuns.get(i).isEmpty()) {
+                continue;
+            }
+
+            Tuple currTuple = sortedRuns.get(i).peek();
+
+            if (minTuple == null) {
+                minTuple = currTuple;
+                minSortedRun = sortedRuns.get(i);
+            }
+
+            compareResult = SortedRun.compareTuples(currTuple, minTuple, attributeIndexes);
+
+            if (compareResult >= 0) {
+                continue;
+            }
+
+            minTuple = currTuple;
+            minSortedRun = sortedRuns.get(i);
+        }
+        mergeOutput.add(minTuple);
+        minSortedRun.poll();
+
+        return mergeOutput;
+    }
+
+//    public Tuple sortTupleDesc(int numOfMergedSortedRuns, Batch mergeOutput) {
+//
+//        Tuple maxTuple= null;
+//        SortedRun maxSortedRun = null;
+//
+//        int compareResult;
+//        for (int i = 0; i < numOfMergedSortedRuns; i++) {
+//
+//            if (sortedRuns.get(i).isEmpty()) {
+//                continue;
+//            }
+//
+//            Tuple currTuple = sortedRuns.get(i).peek();
+//
+//            if (maxTuple == null) {
+//                maxTuple = currTuple;
+//                maxSortedRun = sortedRuns.get(i);
+//            }
+//
+//            compareResult = SortedRun.compareTuples(currTuple, minTuple, attributeIndexes);
+//
+//            if (compareResult <= 0) {
+//                continue;
+//            }
+//
+//            maxTuple = currTuple;
+//            maxSortedRun = sortedRuns.get(i);
+//        }
+//
+//        mergeOutput.add(maxTuple);
+//        maxSortedRun.poll();
+//    }
+
 
     public Object clone() {
         Operator newbase = (Operator) base.clone();

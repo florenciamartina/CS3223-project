@@ -57,7 +57,7 @@ public class RandomInitialPlan {
         }
 
         if (sqlquery.isDistinct()) {
-            createProjectDistinctOp();
+            createDistinctOp();
             System.out.println("PROJECT DISTINCT!!");
         } else {
             createProjectOp();
@@ -199,7 +199,7 @@ public class RandomInitialPlan {
         System.out.println(joinlist);
         System.out.println(projectlist);
         String tabname = fromlist.get(0);
-        Sort op = new Sort(OpType.EXTERNALSORT, root, nOfBuffer, groupbylist, tabname);
+        GroupBy op = new GroupBy(OpType.EXTERNALSORT, root, nOfBuffer, groupbylist, tabname);
         op.setSchema(root.getSchema());
         root = op;
 
@@ -290,13 +290,20 @@ public class RandomInitialPlan {
         }
     }
 
-    public void createProjectDistinctOp() {
+    public void createDistinctOp() {
         Operator base = root;
+        String tabname = fromlist.get(0);
+        Schema newSchema;
+
         if (projectlist == null)
-            projectlist = new ArrayList<Attribute>();
+            projectlist = new ArrayList<>();
+            root = new Distinct(base, OpType.DISTINCT, tabname);
+            newSchema = base.getSchema();
+            root.setSchema(newSchema);
+
         if (!projectlist.isEmpty()) {
-            root = new ProjectDistinct(base, projectlist, OpType.PROJECT);
-            Schema newSchema = base.getSchema().subSchema(projectlist);
+            root = new Distinct(base, OpType.DISTINCT, projectlist, tabname);
+            newSchema = base.getSchema().subSchema(projectlist);
             root.setSchema(newSchema);
         }
     }
