@@ -21,6 +21,7 @@ public class SQLQuery {
     ArrayList<Attribute> groupbyList;    // List of attibutes in groupby clause
     ArrayList<Attribute> orderbyList;    // List of attibutes in orderby clause
 
+    boolean isAsc = true;
     boolean isDistinct = false;          // Whether distinct key word appeared in select clause
 
     public SQLQuery(ArrayList<Attribute> list1, ArrayList<String> list2, ArrayList<Condition> list3) {
@@ -68,6 +69,8 @@ public class SQLQuery {
         }
     }
 
+    public void setIsAsc(boolean flag) { this.isAsc = flag; }
+    public boolean isAsc() { return this.isAsc; }
     public void setIsDistinct(boolean flag) {
         isDistinct = flag;
     }
