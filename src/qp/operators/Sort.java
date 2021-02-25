@@ -213,7 +213,6 @@ public class Sort extends Operator {
 
             Tuple currTuple = sortedRuns.get(i).peek();
 
-
             if (minTuple == null) {
                 minTuple = currTuple;
                 minSortedRun = sortedRuns.get(i);
@@ -252,7 +251,7 @@ public class Sort extends Operator {
 
             compareResult = SortedRun.compareTuples(currTuple, maxTuple, attributeIndexes);
 
-            if (compareResult >= 0) {
+            if (compareResult <= 0) {
                 continue;
             }
 
