@@ -4,12 +4,8 @@
 
 package qp.operators;
 
-import java.io.EOFException;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import qp.optimizer.BufferManager;
 import qp.utils.*;
@@ -172,7 +168,7 @@ public class Sort extends Operator {
             }
 
             // Sort the tuples and generate sorted run
-            SortedRun sr = new SortedRun(tuples, attributeIndexes);
+            SortedRun sr = new SortedRun(tuples, attributeIndexes, isAsc);
             sortedRuns.add(sr);
 
             // Write sorted runs to temporary files
@@ -195,6 +191,66 @@ public class Sort extends Operator {
     }
 
     private ArrayList<SortedRun> mergeSortedRuns() {
+
+        ArrayList<SortedRun> mergedSortedRuns;
+        if (isAsc) {
+            mergedSortedRuns = sortTupleAsc();
+        } else {
+            mergedSortedRuns = sortTupleDesc();
+        }
+
+        return mergedSortedRuns;
+//        int pass = 1;
+//        while (sortedRuns.size() > 1) {
+//
+//            Batch mergeOutput = new Batch(batchSize);
+//            int numOfMergedSortedRuns = Math.min(numOfBuff - 1, sortedRuns.size());
+//
+//            while (!isSortedRunsEmpty(numOfMergedSortedRuns)) {
+//
+//                // Find smallest value among (numOfBuff - 1) sorted runs
+//                Tuple minTuple = null;
+//                SortedRun minSortedRun = null;
+//                int compareResult;
+//                for (int i = 0; i < numOfMergedSortedRuns; i++) {
+//
+//                    if (sortedRuns.get(i).isEmpty()) {
+//                        continue;
+//                    }
+//
+//                    Tuple currTuple = sortedRuns.get(i).peek();
+//
+//                    if (minTuple == null) {
+//                        minTuple = currTuple;
+//                        minSortedRun = sortedRuns.get(i);
+//                    }
+//
+//                    compareResult = SortedRun.compareTuples(currTuple, minTuple, attributeIndexes);
+//
+//
+//
+//                    if (compareResult >= 0) {
+//                        continue;
+//                    }
+//
+//
+//
+//                    minTuple = currTuple;
+//                    minSortedRun = sortedRuns.get(i);
+//                }
+//
+//                mergeOutput.add(minTuple);
+//                minSortedRun.poll();
+//            }
+//
+//            sortedRuns.removeIf(SortedRun::isEmpty);
+//            sortedRuns.add(new SortedRun(mergeOutput.getTuples()));
+//        }
+//
+//        return sortedRuns;
+    }
+
+    public ArrayList<SortedRun> sortTupleAsc() {
 
         int pass = 1;
         while (sortedRuns.size() > 1) {
@@ -223,6 +279,8 @@ public class Sort extends Operator {
 
                     compareResult = SortedRun.compareTuples(currTuple, minTuple, attributeIndexes);
 
+
+
                     if (compareResult >= 0) {
                         continue;
                     }
@@ -242,71 +300,53 @@ public class Sort extends Operator {
         return sortedRuns;
     }
 
-    public Batch sortTupleAsc(int numOfMergedSortedRuns, Batch mergeOutput) {
-        Tuple minTuple = null;
-        SortedRun minSortedRun = null;
+    public ArrayList<SortedRun> sortTupleDesc() {
 
-        int compareResult;
-        for (int i = 0; i < numOfMergedSortedRuns; i++) {
+        int pass = 1;
+        while (sortedRuns.size() > 1) {
 
-            if (sortedRuns.get(i).isEmpty()) {
-                continue;
+            Batch mergeOutput = new Batch(batchSize);
+            int numOfMergedSortedRuns = Math.min(numOfBuff - 1, sortedRuns.size());
+
+            while (!isSortedRunsEmpty(numOfMergedSortedRuns)) {
+
+                // Find biggest value among (numOfBuff - 1) sorted runs
+                Tuple maxTuple = null;
+                SortedRun maxSortedRun = null;
+                int compareResult;
+                for (int i = 0; i < numOfMergedSortedRuns; i++) {
+
+                    if (sortedRuns.get(i).isEmpty()) {
+                        continue;
+                    }
+
+                    Tuple currTuple = sortedRuns.get(i).peek();
+
+                    if (maxTuple == null) {
+                        maxTuple = currTuple;
+                        maxSortedRun = sortedRuns.get(i);
+                    }
+
+                    compareResult = SortedRun.compareTuples(currTuple, maxTuple, attributeIndexes);
+
+                    if (compareResult <= 0) {
+                        continue;
+                    }
+
+                    maxTuple = currTuple;
+                    maxSortedRun = sortedRuns.get(i);
+                }
+
+                mergeOutput.add(maxTuple);
+                maxSortedRun.poll();
             }
 
-            Tuple currTuple = sortedRuns.get(i).peek();
-
-            if (minTuple == null) {
-                minTuple = currTuple;
-                minSortedRun = sortedRuns.get(i);
-            }
-
-            compareResult = SortedRun.compareTuples(currTuple, minTuple, attributeIndexes);
-
-            if (compareResult >= 0) {
-                continue;
-            }
-
-            minTuple = currTuple;
-            minSortedRun = sortedRuns.get(i);
+            sortedRuns.removeIf(SortedRun::isEmpty);
+            sortedRuns.add(new SortedRun(mergeOutput.getTuples()));
         }
-        mergeOutput.add(minTuple);
-        minSortedRun.poll();
 
-        return mergeOutput;
+        return sortedRuns;
     }
-
-//    public Tuple sortTupleDesc(int numOfMergedSortedRuns, Batch mergeOutput) {
-//
-//        Tuple maxTuple= null;
-//        SortedRun maxSortedRun = null;
-//
-//        int compareResult;
-//        for (int i = 0; i < numOfMergedSortedRuns; i++) {
-//
-//            if (sortedRuns.get(i).isEmpty()) {
-//                continue;
-//            }
-//
-//            Tuple currTuple = sortedRuns.get(i).peek();
-//
-//            if (maxTuple == null) {
-//                maxTuple = currTuple;
-//                maxSortedRun = sortedRuns.get(i);
-//            }
-//
-//            compareResult = SortedRun.compareTuples(currTuple, minTuple, attributeIndexes);
-//
-//            if (compareResult <= 0) {
-//                continue;
-//            }
-//
-//            maxTuple = currTuple;
-//            maxSortedRun = sortedRuns.get(i);
-//        }
-//
-//        mergeOutput.add(maxTuple);
-//        maxSortedRun.poll();
-//    }
 
 
     public Object clone() {

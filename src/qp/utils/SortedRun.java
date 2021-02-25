@@ -7,6 +7,7 @@ import java.util.Collections;
 public class SortedRun implements Serializable {
 
     ArrayList<Tuple> sortedTuples;
+    boolean isAsc = true;
 
     public SortedRun(ArrayList<Tuple> sortedTuples) {
         this.sortedTuples = sortedTuples;
@@ -23,8 +24,15 @@ public class SortedRun implements Serializable {
         return result;
     }
 
-    public SortedRun(ArrayList<Tuple> tuples, ArrayList<Integer> attributeIndexes) {
-        tuples.sort((x, y) -> compareTuples(x, y, attributeIndexes));
+    public SortedRun(ArrayList<Tuple> tuples, ArrayList<Integer> attributeIndexes, boolean isAsc) {
+        this.isAsc = isAsc;
+
+        if (isAsc) {
+            tuples.sort((x, y) -> compareTuples(x, y, attributeIndexes));
+        } else {
+            tuples.sort((y, x) -> compareTuples(x, y, attributeIndexes));
+        }
+
         this.sortedTuples = tuples;
     }
 

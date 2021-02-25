@@ -24,17 +24,13 @@
   <component name="ChangeListManager">
     <list default="true" id="3dc5fae0-e5c9-48b9-8203-7ff7ec6daf6d" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/classes/QueryMain.class" beforeDir="false" afterPath="$PROJECT_DIR$/classes/QueryMain.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/classes/qp/operators/Distinct.class" beforeDir="false" afterPath="$PROJECT_DIR$/classes/qp/operators/Distinct.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/classes/qp/operators/GroupBy.class" beforeDir="false" afterPath="$PROJECT_DIR$/classes/qp/operators/GroupBy.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/classes/qp/optimizer/RandomInitialPlan.class" beforeDir="false" afterPath="$PROJECT_DIR$/classes/qp/optimizer/RandomInitialPlan.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/QueryMain.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/QueryMain.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/qp/operators/Distinct.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/qp/operators/Distinct.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/qp/operators/Sort.class" beforeDir="false" afterPath="$PROJECT_DIR$/classes/qp/operators/Sort.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/qp/utils/SortedRun.class" beforeDir="false" afterPath="$PROJECT_DIR$/classes/qp/utils/SortedRun.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/qp/operators/GroupBy.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/qp/operators/GroupBy.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/qp/optimizer/RandomInitialPlan.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/qp/optimizer/RandomInitialPlan.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/testcases/query12.sql" beforeDir="false" afterPath="$PROJECT_DIR$/testcases/query12.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/testcases/query9.out" beforeDir="false" afterPath="$PROJECT_DIR$/testcases/query9.out" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/testcases/query9.sql" beforeDir="false" afterPath="$PROJECT_DIR$/testcases/query9.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/qp/operators/OrderBy.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/qp/operators/OrderBy.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/qp/operators/Sort.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/qp/operators/Sort.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/qp/utils/SortedRun.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/qp/utils/SortedRun.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -156,7 +152,7 @@
       <breakpoints>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/qp/operators/Sort.java</url>
-          <line>177</line>
+          <line>173</line>
           <option name="timeStamp" value="1" />
         </line-breakpoint>
       </breakpoints>
