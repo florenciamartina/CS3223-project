@@ -6,6 +6,7 @@ package qp.utils;
 
 import java.util.*;
 import java.io.*;
+import java.lang.StringBuilder;
 
 /**
  * Tuple - a simple object which holds an ArrayList of data
@@ -88,37 +89,32 @@ public class Tuple implements Serializable {
         } else if (leftdata instanceof Float) {
             return ((Float) leftdata).compareTo((Float) rightdata);
         } else {
-            System.out.println("Tuple: Unknown comparision of the tuples");
+            System.out.println("Tuple: Unknown comparison of the tuples");
             System.exit(1);
             return 0;
         }
     }
 
-    /**
-     * Comparing tuples in different tables with multiple conditions, used for join condition checking
-     **/
-    public static int compareTuples(Tuple left, Tuple right, ArrayList<Integer> leftIndex, ArrayList<Integer> rightIndex) {
-        if (leftIndex.size() != rightIndex.size()) {
-            System.out.println("Tuple: Unknown comparision of the tuples");
-            System.exit(1);
-            return 0;
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this) {
+            return true;
         }
-        for (int i = 0; i < leftIndex.size(); ++i) {
-            Object leftdata = left.dataAt(leftIndex.get(i));
-            Object rightdata = right.dataAt(rightIndex.get(i));
-            if (leftdata.equals(rightdata)) continue;
-            if (leftdata instanceof Integer) {
-                return ((Integer) leftdata).compareTo((Integer) rightdata);
-            } else if (leftdata instanceof String) {
-                return ((String) leftdata).compareTo((String) rightdata);
-            } else if (leftdata instanceof Float) {
-                return ((Float) leftdata).compareTo((Float) rightdata);
-            } else {
-                System.out.println("Tuple: Unknown comparision of the tuples");
-                System.exit(1);
-                return 0;
+
+        if (!(obj instanceof Tuple)) {
+            return false;
+        }
+
+        Tuple t = (Tuple) obj;
+        for (int i = 0; i < _data.size(); i++) {
+            // TODO implement this
+            if (compareTuples(this, t, i) != 0) {
+                return false;
             }
         }
-        return 0;
+
+        return true;
+
     }
 }

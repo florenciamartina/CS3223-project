@@ -18,7 +18,7 @@ public class Project extends Operator {
     int batchsize;                 // Number of tuples per outbatch
 
     /**
-     * The following fields are requied during execution
+     * The following fields are required during execution
      * * of the Project Operator
      **/
     Batch inbatch;
@@ -70,7 +70,7 @@ public class Project extends Operator {
             Attribute attr = attrset.get(i);
 
             if (attr.getAggType() != Attribute.NONE) {
-                System.err.println("Aggragation is not implemented.");
+                System.err.println("Aggregation is not implemented.");
                 System.exit(1);
             }
 
