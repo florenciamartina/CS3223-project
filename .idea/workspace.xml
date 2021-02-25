@@ -24,6 +24,7 @@
   <component name="ChangeListManager">
     <list default="true" id="3dc5fae0-e5c9-48b9-8203-7ff7ec6daf6d" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+<<<<<<< HEAD
       <change beforePath="$PROJECT_DIR$/classes/qp/operators/GroupBy.class" beforeDir="false" afterPath="$PROJECT_DIR$/classes/qp/operators/GroupBy.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/classes/qp/operators/Sort.class" beforeDir="false" afterPath="$PROJECT_DIR$/classes/qp/operators/Sort.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/classes/qp/utils/SortedRun.class" beforeDir="false" afterPath="$PROJECT_DIR$/classes/qp/utils/SortedRun.class" afterDir="false" />
@@ -31,6 +32,16 @@
       <change beforePath="$PROJECT_DIR$/src/qp/operators/OrderBy.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/qp/operators/OrderBy.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/qp/operators/Sort.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/qp/operators/Sort.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/qp/utils/SortedRun.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/qp/utils/SortedRun.java" afterDir="false" />
+=======
+      <change beforePath="$PROJECT_DIR$/classes/qp/operators/Distinct.class" beforeDir="false" afterPath="$PROJECT_DIR$/classes/qp/operators/Distinct.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/qp/operators/GroupBy.class" beforeDir="false" afterPath="$PROJECT_DIR$/classes/qp/operators/GroupBy.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/qp/operators/Sort.class" beforeDir="false" afterPath="$PROJECT_DIR$/classes/qp/operators/Sort.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/qp/operators/Distinct.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/qp/operators/Distinct.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/qp/operators/GroupBy.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/qp/operators/GroupBy.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/qp/operators/Sort.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/qp/operators/Sort.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/qp/optimizer/RandomInitialPlan.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/qp/optimizer/RandomInitialPlan.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/testcases/query11.sql" beforeDir="false" afterPath="$PROJECT_DIR$/testcases/query11.sql" afterDir="false" />
+>>>>>>> b254bbcc608304c72c7e6de87e57dabd9fdf2aff
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -102,7 +113,7 @@
       </list>
     </option>
   </component>
-  <component name="SpellCheckerSettings" BundledDictionaries="0" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" Dictionaries="0" CorrectionsLimit="5" DefaultDictionary="application-level" UseSingleDictionary="true" />
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="false" />
   <component name="SvnConfiguration">
     <configuration />
   </component>
@@ -121,13 +132,12 @@
       <map>
         <entry key="MAIN">
           <value>
-            <State>
-              <option name="COLUMN_ORDER" />
-            </State>
+            <State />
           </value>
         </entry>
       </map>
     </option>
+<<<<<<< HEAD
   </component>
   <component name="WindowStateProjectService">
     <state x="514" y="216" key="#com.intellij.fileTypes.FileTypeChooser" timestamp="1614227591953">
@@ -157,5 +167,8 @@
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
+=======
+    <option name="oldMeFiltersMigrated" value="true" />
+>>>>>>> b254bbcc608304c72c7e6de87e57dabd9fdf2aff
   </component>
 </project>

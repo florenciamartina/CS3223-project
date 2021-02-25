@@ -191,7 +191,7 @@ public class RandomInitialPlan {
         System.out.println(joinlist);
         System.out.println(projectlist);
         String tabname = fromlist.get(0);
-        GroupBy op = new GroupBy(OpType.EXTERNALSORT, root, nOfBuffer, groupbylist, tabname);
+        GroupBy op = new GroupBy(root, nOfBuffer, groupbylist);
         op.setSchema(root.getSchema());
         root = op;
 
