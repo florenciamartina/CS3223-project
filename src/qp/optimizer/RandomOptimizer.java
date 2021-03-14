@@ -44,6 +44,9 @@ public class RandomOptimizer {
      **/
     public static Operator makeExecPlan(Operator node) {
         if (node.getOpType() == OpType.JOIN) {
+            //debug
+            System.out.println("Enter join");
+            //debug
             Operator left = makeExecPlan(((Join) node).getLeft());
             Operator right = makeExecPlan(((Join) node).getRight());
             int joinType = ((Join) node).getJoinType();
@@ -62,6 +65,13 @@ public class RandomOptimizer {
                     bnlj.setRight(right);
                     bnlj.setNumBuff(numbuff);
                     return bnlj;
+
+                case JoinType.SORTMERGE:
+                    SortMergeJoin smj = new SortMergeJoin((Join) node);
+                    smj.setLeft(left);
+                    smj.setRight(right);
+                    smj.setNumBuff(numbuff);
+                    return smj;
 
                 default:
                     return node;

@@ -185,7 +185,7 @@ public class RandomInitialPlan {
             /** randomly select a join type**/
             int numJMeth = JoinType.numJoinTypes();
 //            int joinMeth = RandNumb.randInt(0, numJMeth - 1); // default
-            int joinMeth = 1; // set jointype = blockNested
+            int joinMeth = JoinType.SORTMERGE; // set jointype = blockNested
             jn.setJoinType(joinMeth);
             modifyHashtable(left, jn);
             modifyHashtable(right, jn);
