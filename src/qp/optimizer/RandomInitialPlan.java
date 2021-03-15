@@ -74,7 +74,6 @@ public class RandomInitialPlan {
 
         if (sqlquery.isDistinct()) {
             createDistinctOp();
-            System.out.println("DISTINCT!!");
         }
 
         return root;

@@ -21,7 +21,6 @@ public class Distinct extends Operator {
     Batch outbatch;  // This is the current output buffer
     int start;       // Cursor position in the input buffer
     Sort sortBase;
-    Tuple prevTuple = null; // Keep track of previous tuple
 
     /**
      * constructor

@@ -17,14 +17,14 @@ public class RandomOptimizer {
     /**
      * enumeration of different ways to find the neighbor plan
      **/
-    public static final int METHODCHOICE = 0;  // Selecting neighbor by changing a method for an operator
+    public static final int METHOD_CHOICE = 0;  // Selecting neighbor by changing a method for an operator
     public static final int COMMUTATIVE = 1;   // By rearranging the operators by commutative rule
     public static final int ASSOCIATIVE = 2;   // Rearranging the operators by associative rule
 
     /**
-     * Number of altenative methods available for a node as specified above
+     * Number of alternative methods available for a node as specified above
      **/
-    public static final int NUMCHOICES = 3;
+    public static final int NUM_CHOICES = 3;
 
     SQLQuery sqlquery;  // Vector of Vectors of Select + From + Where + GroupBy
     int numJoin;        // Number of joins in this query plan
@@ -85,6 +85,14 @@ public class RandomOptimizer {
             Operator base = makeExecPlan(((Distinct) node).getBase());
             ((Distinct) node).setBase(base);
             return node;
+        } else if (node.getOpType() == OpType.GROUPBY) {
+            Operator base = makeExecPlan(((GroupBy) node).getBase());
+            ((GroupBy) node).setBase(base);
+            return node;
+        } else if (node.getOpType() == OpType.ORDERBY) {
+            Operator base = makeExecPlan(((OrderBy) node).getBase());
+            ((OrderBy) node).setBase(base);
+            return node;
         } else {
             return node;
         }
@@ -97,10 +105,10 @@ public class RandomOptimizer {
         // Randomly select a node to be altered to get the neighbour
         int nodeNum = RandNumb.randInt(0, numJoin - 1);
         // Randomly select type of alteration: Change Method/Associative/Commutative
-        int changeType = RandNumb.randInt(0, NUMCHOICES - 1);
+        int changeType = RandNumb.randInt(0, NUM_CHOICES - 1);
         Operator neighbor = null;
         switch (changeType) {
-            case METHODCHOICE:   // Select a neighbour by changing the method type
+            case METHOD_CHOICE:   // Select a neighbour by changing the method type
                 neighbor = neighborMeth(root, nodeNum);
                 break;
             case COMMUTATIVE:
@@ -225,7 +233,6 @@ public class RandomOptimizer {
             while (joinMeth == prevJoinMeth) {
                 joinMeth = RandNumb.randInt(0, numJMeth - 1);
             }
-//            joinMeth = JoinType.BLOCKNESTED; // set join type to be BlockNested
             node.setJoinType(joinMeth);
         }
         return root;
@@ -240,7 +247,6 @@ public class RandomOptimizer {
         System.out.println("------------------neighbor by commutative---------------");
         /** find the node to be altered**/
         Join node = (Join) findNodeAt(root, joinNum);
-        System.out.println("null ga? " + (node == null ? "iya" : "ngga"));
         Operator left = node.getLeft();
         Operator right = node.getRight();
         node.setLeft(right);
@@ -363,9 +369,10 @@ public class RandomOptimizer {
 
     /**
      * This method traverses through the query plan and
-     * * returns the node mentioned by joinNum
+     * returns the node mentioned by joinNum
      **/
     protected Operator findNodeAt(Operator node, int joinNum) {
+        System.out.println("Node type: " + node.getOpType());
         if (node.getOpType() == OpType.JOIN) {
             if (((Join) node).getNodeIndex() == joinNum) {
                 return node;
@@ -385,6 +392,10 @@ public class RandomOptimizer {
             return findNodeAt(((Project) node).getBase(), joinNum);
         } else if (node.getOpType() == OpType.DISTINCT) {
             return findNodeAt(((Distinct) node).getBase(), joinNum);
+        } else if (node.getOpType() == OpType.GROUPBY) {
+            return findNodeAt(((GroupBy) node).getBase(), joinNum);
+        } else if (node.getOpType() == OpType.ORDERBY) {
+            return findNodeAt(((OrderBy) node).getBase(), joinNum);
         } else {
             return null;
         }
@@ -409,6 +420,18 @@ public class RandomOptimizer {
             modifySchema(base);
             ArrayList attrlist = ((Project) node).getProjAttr();
             node.setSchema(base.getSchema().subSchema(attrlist));
+        } else if (node.getOpType() == OpType.DISTINCT) {
+            Operator base = ((Distinct) node).getBase();
+            modifySchema(base);
+            node.setSchema(base.getSchema());
+        } else if (node.getOpType() == OpType.GROUPBY) {
+            Operator base = ((GroupBy) node).getBase();
+            modifySchema(base);
+            node.setSchema(base.getSchema());
+        } else if (node.getOpType() == OpType.ORDERBY) {
+            Operator base = ((OrderBy) node).getBase();
+            modifySchema(base);
+            node.setSchema(base.getSchema());
         }
     }
 }

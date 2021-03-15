@@ -78,7 +78,7 @@ public class PlanCost {
             return getStatistics((Scan) node);
         } else if (node.getOpType() == OpType.GROUPBY) {
             return 1;
-        } else if (node.getOpType() == OpType.EXTERNALSORT) {
+        } else if (node.getOpType() == OpType.ORDERBY) {
             return 1;
         } else if (node.getOpType() == OpType.DISTINCT) {
             return 1;
@@ -152,7 +152,6 @@ public class PlanCost {
                 break;
             case JoinType.BLOCKNESTED: //TODO: Error in calculation?
                 joincost = leftpages + (long) Math.ceil(1.0 * leftpages / (numbuff - 2)) * rightpages;
-//                joincost = 0;
                 break;
             case JoinType.SORTMERGE:
                 joincost = 1; //TODO: Always choose sort merge, temporary
@@ -243,7 +242,7 @@ public class PlanCost {
         }
         StringTokenizer tokenizer = new StringTokenizer(line);
         if (tokenizer.countTokens() != 1) {
-            System.out.println("incorrect format of statastics file " + filename);
+            System.out.println("incorrect format of statistics file " + filename);
             System.exit(1);
         }
         String temp = tokenizer.nextToken();
@@ -256,7 +255,7 @@ public class PlanCost {
         }
         tokenizer = new StringTokenizer(line);
         if (tokenizer.countTokens() != numAttr) {
-            System.out.println("incorrect format of statastics file " + filename);
+            System.out.println("incorrect format of statistics file " + filename);
             System.exit(1);
         }
         for (int i = 0; i < numAttr; ++i) {
