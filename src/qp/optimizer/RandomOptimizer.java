@@ -44,9 +44,6 @@ public class RandomOptimizer {
      **/
     public static Operator makeExecPlan(Operator node) {
         if (node.getOpType() == OpType.JOIN) {
-            //debug
-            System.out.println("Enter join");
-            //debug
             Operator left = makeExecPlan(((Join) node).getLeft());
             Operator right = makeExecPlan(((Join) node).getRight());
             int joinType = ((Join) node).getJoinType();
@@ -212,7 +209,7 @@ public class RandomOptimizer {
     }
 
     /**
-     * Selects a random method choice for join wiht number joinNum
+     * Selects a random method choice for join with number joinNum
      * *  e.g., Nested loop join, Sort-Merge Join, Hash Join etc..,
      * * returns the modified plan
      **/
@@ -228,6 +225,7 @@ public class RandomOptimizer {
             while (joinMeth == prevJoinMeth) {
                 joinMeth = RandNumb.randInt(0, numJMeth - 1);
             }
+//            joinMeth = JoinType.BLOCKNESTED; // set join type to be BlockNested
             node.setJoinType(joinMeth);
         }
         return root;
@@ -242,6 +240,7 @@ public class RandomOptimizer {
         System.out.println("------------------neighbor by commutative---------------");
         /** find the node to be altered**/
         Join node = (Join) findNodeAt(root, joinNum);
+        System.out.println("null ga? " + (node == null ? "iya" : "ngga"));
         Operator left = node.getLeft();
         Operator right = node.getRight();
         node.setLeft(right);
@@ -384,6 +383,8 @@ public class RandomOptimizer {
             return findNodeAt(((Select) node).getBase(), joinNum);
         } else if (node.getOpType() == OpType.PROJECT) {
             return findNodeAt(((Project) node).getBase(), joinNum);
+        } else if (node.getOpType() == OpType.DISTINCT) {
+            return findNodeAt(((Distinct) node).getBase(), joinNum);
         } else {
             return null;
         }

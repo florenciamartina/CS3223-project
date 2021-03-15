@@ -23,9 +23,9 @@ public class BlockNestedLoopJoin extends Join {
     Batch rightBatch;               // Buffer page for right input stream
     ObjectInputStream in;           // File pointer to the right hand materialized file
 
-    int leftCurs;                   // Cursor for left side block
+    int leftBlockCurs;                   // Cursor for left side block
     int rightCurs;                  // Cursor for right side buffer
-    int leftBatchCurs;              // Cursor for left side buffer page
+    int leftCurs;              // Cursor for left side buffer page
     boolean eosLeft;                // Whether end of stream (left table) is reached
     boolean eosRight;               // Whether end of stream (right table) is reached
 
@@ -58,9 +58,9 @@ public class BlockNestedLoopJoin extends Join {
         Batch rightPage;
 
         /** initialize the cursors of input buffers **/
+        leftBlockCurs = 0;
         leftCurs = 0;
         rightCurs = 0;
-        leftBatchCurs = 0;
         eosLeft = false;
         /** because right stream is to be repetitively scanned
          ** if it reached end, we have to start new scan
@@ -103,6 +103,7 @@ public class BlockNestedLoopJoin extends Join {
      **/
     public Batch next() {
         int i, j, k;
+
         if (eosLeft) {
             return null;
         }
@@ -110,10 +111,11 @@ public class BlockNestedLoopJoin extends Join {
         outBatch = new Batch(batchSize);
 
         while (!outBatch.isFull()) {
-            if (leftCurs == 0 && eosRight) {
+            if (leftBlockCurs == 0 && eosRight) {
+
                 /** new left block is to be fetched **/
                 leftBlock = new ArrayList<>();
-                for (int b = 0; b < getNumBuff(); b++) {
+                for (int b = 0; b < getNumBuff() - 2; b++) {
                     Batch leftBatch = left.next();
                     if (leftBatch == null) break;
 
@@ -144,9 +146,9 @@ public class BlockNestedLoopJoin extends Join {
                         rightBatch = (Batch) in.readObject();
                     }
 
-                    for (i = leftCurs; i < leftBlock.size(); ++i) {
+                    for (i = leftBlockCurs; i < leftBlock.size(); ++i) {
                         Batch leftBatch = leftBlock.get(i);
-                        for (j = leftBatchCurs; j < leftBatch.size(); ++j) {
+                        for (j = leftCurs; j < leftBatch.size(); ++j) {
                             for (k = rightCurs; k < rightBatch.size(); ++k) {
                                 Tuple leftTuple = leftBatch.get(j);
                                 Tuple rightTuple = rightBatch.get(k);
@@ -160,12 +162,12 @@ public class BlockNestedLoopJoin extends Join {
 
                                         rightCurs = isEndRightBatch ? 0 : k + 1;
 
-                                        leftBatchCurs = isEndLeftBatch && isEndRightBatch
+                                        leftCurs = isEndLeftBatch && isEndRightBatch
                                                 ? 0
                                                 : !isEndLeftBatch && isEndRightBatch
                                                     ? j + 1 : j;
 
-                                        leftCurs = isEndLeftBlock && isEndLeftBatch && isEndRightBatch
+                                        leftBlockCurs = isEndLeftBlock && isEndLeftBatch && isEndRightBatch
                                                 ? 0 : !isEndLeftBlock && isEndLeftBatch && isEndRightBatch
                                                     ? i + 1 : i;
 
@@ -175,9 +177,9 @@ public class BlockNestedLoopJoin extends Join {
                             }
                             rightCurs = 0;
                         }
-                        leftBatchCurs = 0;
+                        leftCurs = 0;
                     }
-                    leftCurs = 0;
+                    leftBlockCurs = 0;
                 } catch (EOFException e) {
                     try {
                         in.close();

@@ -82,8 +82,6 @@ public class PlanCost {
             return 1;
         } else if (node.getOpType() == OpType.DISTINCT) {
             return 1;
-        } else if (node.getOpType() == OpType.DISTINCT) {
-            return 1;
         }
 
         System.out.println("operator is not supported");
@@ -153,7 +151,8 @@ public class PlanCost {
                 joincost = leftpages * rightpages;
                 break;
             case JoinType.BLOCKNESTED: //TODO: Error in calculation?
-                joincost = leftpages + (long) Math.ceil(1.0 * leftpages / numbuff) * rightpages;
+                joincost = leftpages + (long) Math.ceil(1.0 * leftpages / (numbuff - 2)) * rightpages;
+//                joincost = 0;
                 break;
             case JoinType.SORTMERGE:
                 joincost = 1; //TODO: Always choose sort merge, temporary
@@ -162,6 +161,7 @@ public class PlanCost {
                 System.out.println("join type is not supported");
                 return 0;
         }
+
         cost = cost + joincost;
 
         return outtuples;

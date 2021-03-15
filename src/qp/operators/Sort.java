@@ -89,7 +89,7 @@ public class Sort extends Operator {
         try {
             numOfPasses++;
             System.out.println("Passes: " + numOfPasses);
-            String filename = String.format("SortTemp-P%d", numOfPasses);
+            String filename = String.format("SortTemp-P%d", numOfPasses == 1 ? 0 : numOfPasses);
             in = new ObjectInputStream(new FileInputStream(filename));
             sorted = (SortedRun) in.readObject();
             System.out.println("SortedSize: " + sorted.size());
