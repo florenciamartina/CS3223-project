@@ -82,6 +82,8 @@ public class PlanCost {
             return getSortStatistics((Sort) node);
         } else if (node.getOpType() == OpType.DISTINCT) {
             return getStatistics((Distinct) node);
+        } else if (node.getOpType() == OpType.ORDERBY) {
+            return getStatistics((OrderBy) node);
         }
 
         System.out.println("operator is not supported");
@@ -98,6 +100,11 @@ public class PlanCost {
     }
 
     protected long getStatistics(Distinct node) {
+        long sortCost = getSortStatistics(node);
+        return sortCost;
+    }
+
+    protected long getStatistics(OrderBy node) {
         long sortCost = getSortStatistics(node);
         return sortCost;
     }
