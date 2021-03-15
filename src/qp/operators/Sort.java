@@ -83,11 +83,18 @@ public class Sort extends Operator {
         }
 
         numSortedRuns = generateSortedRuns();
+
+        if (numSortedRuns == 0) {
+            eos = true;
+            return true;
+        }
+
         mergeSortedRuns();
 
         // Read final sorted run
         try {
             numOfPasses++;
+            System.out.println("Sorted Runs:" + numSortedRuns);
             System.out.println("Passes: " + numOfPasses);
             String filename = String.format("SortTemp-P%d", numOfPasses == 1 ? 0 : numOfPasses);
             in = new ObjectInputStream(new FileInputStream(filename));
@@ -209,8 +216,17 @@ public class Sort extends Operator {
                 Batch mergeOutput = new Batch(batchSize);
                 SortedRun selectedSortedRun;
 
+//                Tuple prevTuple = null;
+//                Tuple currTuple = null;
                 while (!mergedSortedRuns.stream().allMatch(SortedRun::isEmpty)) {
                     selectedSortedRun = findSelectedSortedRun(mergedSortedRuns, mergedSortedRuns.size(), isAsc);
+
+//                    currTuple = selectedSortedRun.poll();
+//                    if (prevTuple == null) {
+//                        prevTuple = currTuple;
+//                    } else if (prevTuple != currTuple) {
+//                        mergeOutput.add(currTuple);
+//                    }
                     mergeOutput.add(selectedSortedRun.poll());
                 }
 
@@ -284,8 +300,12 @@ public class Sort extends Operator {
 
         // Close streams
         try {
-            in.close();
-            out.close();
+            if (in != null) {
+                in.close();
+            }
+            if (out != null) {
+                out.close();
+            }
         } catch (IOException io) {
             System.err.println("Sort: Failed to close streams");
         }
