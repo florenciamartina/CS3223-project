@@ -74,8 +74,8 @@ public class SortMergeJoin extends Join {
         }
 
         // Sort the 2 relations
-		leftSort = new Sort(left, numBuff, leftAttributeIndex, true);
-		rightSort = new Sort(right, numBuff, rightAttributeIndex, true);
+		leftSort = new Sort(left, numBuff, leftAttributeIndex);
+		rightSort = new Sort(right, numBuff, rightAttributeIndex);
 
         if (!(leftSort.open() && rightSort.open())) {
             return false;

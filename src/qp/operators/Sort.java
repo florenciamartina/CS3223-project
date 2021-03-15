@@ -37,6 +37,7 @@ public class Sort extends Operator {
 
     // Sorting attributes
     boolean isAsc;
+    boolean isDistinct;
 
     int numOfBuff;
     int numSortedRuns;
@@ -48,17 +49,18 @@ public class Sort extends Operator {
     /**
      * constructor
      **/
-    public Sort(Operator base, int numOfBuff, ArrayList<Attribute> attributeList, boolean isAsc) {
+    public Sort(Operator base, int numOfBuff, ArrayList<Attribute> attributeList, boolean isAsc, boolean isDistinct) {
         super(OpType.EXTERNALSORT);
         this.base = base;
         this.schema = base.schema;
         this.numOfBuff = numOfBuff;
         this.attributes = attributeList;
         this.isAsc = isAsc;
+        this.isDistinct = isDistinct;
     }
 
     public Sort(Operator base, int numOfBuff, ArrayList<Attribute> attributeList) {
-        this(base, numOfBuff, attributeList, true);
+        this(base, numOfBuff, attributeList, true, false);
     }
 
     public boolean open() {
@@ -83,11 +85,18 @@ public class Sort extends Operator {
         }
 
         numSortedRuns = generateSortedRuns();
+
+        if (numSortedRuns == 0) {
+            eos = true;
+            return true;
+        }
+
         mergeSortedRuns();
 
         // Read final sorted run
         try {
             numOfPasses++;
+            System.out.println("Sorted Runs:" + numSortedRuns);
             System.out.println("Passes: " + numOfPasses);
             String filename = String.format("SortTemp-P%d", numOfPasses == 1 ? 0 : numOfPasses);
             in = new ObjectInputStream(new FileInputStream(filename));
@@ -209,9 +218,18 @@ public class Sort extends Operator {
                 Batch mergeOutput = new Batch(batchSize);
                 SortedRun selectedSortedRun;
 
+                Tuple prevTuple = null;
+                Tuple currTuple;
                 while (!mergedSortedRuns.stream().allMatch(SortedRun::isEmpty)) {
                     selectedSortedRun = findSelectedSortedRun(mergedSortedRuns, mergedSortedRuns.size(), isAsc);
-                    mergeOutput.add(selectedSortedRun.poll());
+
+                    currTuple = selectedSortedRun.poll();
+                    if (!isDistinct || prevTuple == null || isDistinct(prevTuple, currTuple)) {
+                        mergeOutput.add(currTuple);
+                    }
+
+                    prevTuple = currTuple;
+//                    mergeOutput.add(selectedSortedRun.poll());
                 }
 
                 sortedRuns.removeIf(SortedRun::isEmpty);
@@ -284,8 +302,12 @@ public class Sort extends Operator {
 
         // Close streams
         try {
-            in.close();
-            out.close();
+            if (in != null) {
+                in.close();
+            }
+            if (out != null) {
+                out.close();
+            }
         } catch (IOException io) {
             System.err.println("Sort: Failed to close streams");
         }
@@ -313,6 +335,27 @@ public class Sort extends Operator {
         Sort newsorter = new Sort(newbase, numOfBuff, newattr);
         newsorter.setSchema((Schema) newbase.getSchema().clone());
         return newsorter;
+    }
+
+    /**
+     * To check whether the current tuple is already present
+     **/
+    private boolean isDistinct(Tuple tuple1, Tuple tuple2) {
+        int result;
+
+        if (!this.attributeIndexes.isEmpty()) {
+            for (Integer i : attributeIndexes) {
+                result = Tuple.compareTuples(tuple1, tuple2, i);
+
+                if (result != 0) {
+                    return true;
+                }
+            }
+            return false;
+
+        } else {
+            return !tuple1.equals(tuple2);
+        }
     }
 
     // Debugging
