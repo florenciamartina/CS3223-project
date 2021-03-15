@@ -71,7 +71,7 @@ public class Distinct extends Operator {
 
         System.out.println(attributes.toString());
 
-        sortBase = new Sort(base, numOfBuffer, attributes);
+        sortBase = new Sort(base, numOfBuffer, attributes, true, true);
         return sortBase.open();
     }
 
@@ -102,43 +102,21 @@ public class Distinct extends Operator {
                 return outbatch;
             }
 
-            for (int i = 0; i < inbatch.size(); i++) {
-                Tuple currTuple = inbatch.get(i);
-
-                if (prevTuple == null || isDistinct(currTuple, prevTuple)) {
-                    outbatch.add(currTuple);
-                    prevTuple = currTuple;
-                    System.out.println("curr Tuple:" + currTuple.toString());
-                }
-            }
+//            for (int i = 0; i < inbatch.size(); i++) {
+//                Tuple currTuple = inbatch.get(i);
+//
+//                if (prevTuple == null || isDistinct(currTuple, prevTuple)) {
+//                    outbatch.add(currTuple);
+//                    prevTuple = currTuple;
+//                    System.out.println("curr Tuple:" + currTuple.toString());
+//                }
+//            }
 
             inbatch = sortBase.next();
 
         }
 
         return outbatch;
-    }
-
-
-    /**
-     * To check whether the current tuple is already present
-     **/
-    protected boolean isDistinct(Tuple tuple1, Tuple tuple2) {
-        int result;
-
-        if (!this.attributeIndexes.isEmpty()) {
-            for (Integer i : attributeIndexes) {
-                result = Tuple.compareTuples(tuple1, tuple2, i);
-
-                if (result != 0) {
-                    return true;
-                }
-            }
-            return false;
-
-        } else {
-            return !tuple1.equals(tuple2);
-        }
     }
 
     /**
