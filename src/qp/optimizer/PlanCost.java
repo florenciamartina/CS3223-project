@@ -99,9 +99,7 @@ public class PlanCost {
 
     protected long getStatistics(Distinct node) {
         long sortCost = getSortStatistics(node);
-        long inTuples = calculateCost(node.getBase());
-        long cost = sortCost + inTuples;
-        return cost;
+        return sortCost;
     }
 
     /**
