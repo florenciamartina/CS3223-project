@@ -334,4 +334,7 @@ public class Sort extends Operator {
         }
     }
 
+    public Operator getBase() {
+        return this.base;
+    }
 }
