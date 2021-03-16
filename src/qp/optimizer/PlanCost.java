@@ -164,7 +164,7 @@ public class PlanCost {
                 break;
             case JoinType.BLOCKNESTED: //TODO: Error in calculation?
                 joincost = leftpages + (long) Math.ceil(1.0 * leftpages / (numbuff - 2)) * rightpages;
-//                joincost = 0;
+//                joincost = 1;
                 break;
             case JoinType.SORTMERGE:
 //                joincost = 1; //TODO: Always choose sort merge, temporary
