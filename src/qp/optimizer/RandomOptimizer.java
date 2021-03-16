@@ -231,10 +231,10 @@ public class RandomOptimizer {
             int prevJoinMeth = node.getJoinType();
 //            int joinMeth = RandNumb.randInt(0, numJMeth - 1);
             int joinMeth = JoinType.BLOCKNESTED;
-            while (joinMeth == prevJoinMeth) {
-//                joinMeth = RandNumb.randInt(0, numJMeth - 1);
-                joinMeth = JoinType.BLOCKNESTED;
-            }
+//            while (joinMeth == prevJoinMeth) {
+////                joinMeth = RandNumb.randInt(0, numJMeth - 1);
+//                joinMeth = JoinType.BLOCKNESTED;
+//            }
             node.setJoinType(joinMeth);
         }
         return root;
