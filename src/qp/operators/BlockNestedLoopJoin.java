@@ -154,6 +154,7 @@ public class BlockNestedLoopJoin extends Join {
                                 Tuple rightTuple = rightBatch.get(k);
                                 if (leftTuple.checkJoin(rightTuple, leftIndex, rightIndex)) {
                                     Tuple outTuple = leftTuple.joinWith(rightTuple);
+                                    System.out.println("outtple " + outTuple);
                                     outBatch.add(outTuple);
                                     if (outBatch.isFull()) {
                                         boolean isEndLeftBlock = i == leftBlock.size() - 1;
