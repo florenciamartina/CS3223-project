@@ -1,2 +1,27 @@
-testcases/
-/.idea/
+##############################
+## Java
+##############################
+.mtj.tmp/
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+hs_err_pid*
+
+##############################
+## IntelliJ
+##############################
+out/
+.idea/
+.idea_modules/
+classes/
+*.iml
+*.ipr
+*.iws
+
+/testcases/
+/experiments/*.txt
+/experiments/*.tbl
+/experiments/*.md
+/experiments/*.stat

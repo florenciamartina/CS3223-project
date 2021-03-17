@@ -25,7 +25,6 @@ public class Sort extends Operator {
     Operator base;
     ArrayList<Integer> attributeIndexes;
     ArrayList<Attribute> attributes;
-    boolean isAsc;
     ObjectInputStream in;       // Input file being scanned
     ObjectOutputStream out;     // Output file being written
 
@@ -37,6 +36,9 @@ public class Sort extends Operator {
     Batch outBatch;             // This is the current output buffer
 
     // Sorting attributes
+    boolean isAsc;
+    boolean isDistinct;
+
     int numOfBuff;
     int numSortedRuns;
     int numOfPasses = 0;
@@ -47,20 +49,23 @@ public class Sort extends Operator {
     /**
      * constructor
      **/
-    public Sort(Operator base, int numOfBuff, ArrayList<Attribute> attributeList, boolean isAsc) {
+    public Sort(Operator base, int numOfBuff, ArrayList<Attribute> attributeList, boolean isAsc, boolean isDistinct) {
         super(OpType.EXTERNALSORT);
         this.base = base;
         this.schema = base.schema;
         this.numOfBuff = numOfBuff;
         this.attributes = attributeList;
         this.isAsc = isAsc;
+        this.isDistinct = isDistinct;
     }
 
     public Sort(Operator base, int numOfBuff, ArrayList<Attribute> attributeList) {
-        this(base, numOfBuff, attributeList, true);
+        this(base, numOfBuff, attributeList, true, false);
     }
 
     public boolean open() {
+
+        System.out.println("ascending" + this.isAsc);
 
         // Base is to be materialized for Sort to perform
         if (!base.open()) {
@@ -80,13 +85,20 @@ public class Sort extends Operator {
         }
 
         numSortedRuns = generateSortedRuns();
+
+        if (numSortedRuns == 0) {
+            eos = true;
+            return true;
+        }
+
         mergeSortedRuns();
 
         // Read final sorted run
         try {
             numOfPasses++;
+            System.out.println("Sorted Runs:" + numSortedRuns);
             System.out.println("Passes: " + numOfPasses);
-            String filename = String.format("SortTemp-P%d", numOfPasses);
+            String filename = String.format("SortTemp-P%d", numOfPasses == 1 ? 0 : numOfPasses);
             in = new ObjectInputStream(new FileInputStream(filename));
             sorted = (SortedRun) in.readObject();
             System.out.println("SortedSize: " + sorted.size());
@@ -155,7 +167,9 @@ public class Sort extends Operator {
                 }
 
                 // Sort the tuples and generate sorted run
-                SortedRun sr = new SortedRun(tuples, attributeIndexes);
+                SortedRun sr = isAsc
+                    ? new SortedRun(tuples, attributeIndexes)
+                    : new SortedRun(tuples, attributeIndexes, false);
                 sortedRuns.add(sr);
 
                 // Write sorted runs
@@ -202,11 +216,20 @@ public class Sort extends Operator {
 
                 // Merge sorted runs
                 Batch mergeOutput = new Batch(batchSize);
-                SortedRun minSortedRun;
+                SortedRun selectedSortedRun;
 
+                Tuple prevTuple = null;
+                Tuple currTuple;
                 while (!mergedSortedRuns.stream().allMatch(SortedRun::isEmpty)) {
-                    minSortedRun = findMinimumSortedRun(mergedSortedRuns, mergedSortedRuns.size());
-                    mergeOutput.add(minSortedRun.poll());
+                    selectedSortedRun = findSelectedSortedRun(mergedSortedRuns, mergedSortedRuns.size(), isAsc);
+
+                    currTuple = selectedSortedRun.poll();
+                    if (!isDistinct || prevTuple == null || isDistinct(prevTuple, currTuple)) {
+                        mergeOutput.add(currTuple);
+                    }
+
+                    prevTuple = currTuple;
+//                    mergeOutput.add(selectedSortedRun.poll());
                 }
 
                 sortedRuns.removeIf(SortedRun::isEmpty);
@@ -245,9 +268,9 @@ public class Sort extends Operator {
 
     }
 
-    private SortedRun findMinimumSortedRun(ArrayList<SortedRun> sortedRuns, int numOfMergedSortedRuns) {
-        Tuple minTuple = null;
-        SortedRun minSortedRun = null;
+    private SortedRun findSelectedSortedRun(ArrayList<SortedRun> sortedRuns, int numOfMergedSortedRuns, boolean isAsc) {
+        Tuple selectedTuple = null;
+        SortedRun selectedSortedRun = null;
         int compareResult;
         for (int i = 0; i < numOfMergedSortedRuns; i++) {
 
@@ -257,96 +280,34 @@ public class Sort extends Operator {
 
             Tuple currTuple = sortedRuns.get(i).peek();
 
-            if (minTuple == null) {
-                minTuple = currTuple;
-                minSortedRun = sortedRuns.get(i);
+            if (selectedTuple == null) {
+                selectedTuple = currTuple;
+                selectedSortedRun = sortedRuns.get(i);
             }
 
-            compareResult = SortedRun.compareTuples(currTuple, minTuple, attributeIndexes);
+            compareResult = SortedRun.compareTuples(currTuple, selectedTuple, attributeIndexes);
 
-            if (compareResult >= 0) {
+            if ((isAsc && compareResult >= 0) || (!isAsc && compareResult <= 0)) {
                 continue;
             }
 
-            minTuple = currTuple;
-            minSortedRun = sortedRuns.get(i);
+            selectedTuple = currTuple;
+            selectedSortedRun = sortedRuns.get(i);
         }
 
-        return minSortedRun;
+        return selectedSortedRun;
     }
-
-    public Batch sortTupleAsc(int numOfMergedSortedRuns, Batch mergeOutput) {
-        Tuple minTuple = null;
-        SortedRun minSortedRun = null;
-
-        int compareResult;
-        for (int i = 0; i < numOfMergedSortedRuns; i++) {
-
-            if (sortedRuns.get(i).isEmpty()) {
-                continue;
-            }
-
-            Tuple currTuple = sortedRuns.get(i).peek();
-
-            if (minTuple == null) {
-                minTuple = currTuple;
-                minSortedRun = sortedRuns.get(i);
-            }
-
-            compareResult = SortedRun.compareTuples(currTuple, minTuple, attributeIndexes);
-
-            if (compareResult >= 0) {
-                continue;
-            }
-
-            minTuple = currTuple;
-            minSortedRun = sortedRuns.get(i);
-        }
-        mergeOutput.add(minTuple);
-        minSortedRun.poll();
-
-        return mergeOutput;
-    }
-
-//    public Tuple sortTupleDesc(int numOfMergedSortedRuns, Batch mergeOutput) {
-//
-//        Tuple maxTuple= null;
-//        SortedRun maxSortedRun = null;
-//
-//        int compareResult;
-//        for (int i = 0; i < numOfMergedSortedRuns; i++) {
-//
-//            if (sortedRuns.get(i).isEmpty()) {
-//                continue;
-//            }
-//
-//            Tuple currTuple = sortedRuns.get(i).peek();
-//
-//            if (maxTuple == null) {
-//                maxTuple = currTuple;
-//                maxSortedRun = sortedRuns.get(i);
-//            }
-//
-//            compareResult = SortedRun.compareTuples(currTuple, minTuple, attributeIndexes);
-//
-//            if (compareResult <= 0) {
-//                continue;
-//            }
-//
-//            maxTuple = currTuple;
-//            maxSortedRun = sortedRuns.get(i);
-//        }
-//
-//        mergeOutput.add(maxTuple);
-//        maxSortedRun.poll();
-//    }
 
     public boolean close() {
 
         // Close streams
         try {
-            in.close();
-            out.close();
+            if (in != null) {
+                in.close();
+            }
+            if (out != null) {
+                out.close();
+            }
         } catch (IOException io) {
             System.err.println("Sort: Failed to close streams");
         }
@@ -376,6 +337,27 @@ public class Sort extends Operator {
         return newsorter;
     }
 
+    /**
+     * To check whether the current tuple is already present
+     **/
+    private boolean isDistinct(Tuple tuple1, Tuple tuple2) {
+        int result;
+
+        if (!this.attributeIndexes.isEmpty()) {
+            for (Integer i : attributeIndexes) {
+                result = Tuple.compareTuples(tuple1, tuple2, i);
+
+                if (result != 0) {
+                    return true;
+                }
+            }
+            return false;
+
+        } else {
+            return !tuple1.equals(tuple2);
+        }
+    }
+
     // Debugging
     private void printSortedRun(SortedRun sr) {
         System.out.print("[");
@@ -395,4 +377,7 @@ public class Sort extends Operator {
         }
     }
 
+    public Operator getBase() {
+        return this.base;
+    }
 }

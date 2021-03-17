@@ -20,12 +20,23 @@ public class SortedRun implements Serializable {
                 break;
             }
         }
+
         return result;
     }
 
-    public SortedRun(ArrayList<Tuple> tuples, ArrayList<Integer> attributeIndexes) {
-        tuples.sort((x, y) -> compareTuples(x, y, attributeIndexes));
+    public SortedRun(ArrayList<Tuple> tuples, ArrayList<Integer> attributeIndexes, boolean isAsc) {
+
+        if (isAsc) {
+            tuples.sort((x, y) -> compareTuples(x, y, attributeIndexes));
+        } else {
+            tuples.sort((x, y) -> compareTuples(y, x, attributeIndexes));
+        }
+
         this.sortedTuples = tuples;
+    }
+
+    public SortedRun(ArrayList<Tuple> tuples, ArrayList<Integer> attributeIndexes) {
+        this(tuples, attributeIndexes, true);
     }
 
     public ArrayList<Tuple> getSortedTuples() {

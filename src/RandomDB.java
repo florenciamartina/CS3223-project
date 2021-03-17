@@ -197,9 +197,8 @@ public class RandomDB {
      * Generates a random time of length equal to range
      **/
     public Time randomTime(int range) {
-        final int millisInDay = 24 * 3600 * 1000;
-        Time time = new Time((long) random.nextInt(millisInDay));
-
+        final long milliseconds = (long) random.nextInt(range) * 60 * 1000;
+        Time time = new Time(milliseconds);
         return time;
     }
 
