@@ -56,7 +56,7 @@ public class TupleReader {
         try {
             in = new ObjectInputStream(new FileInputStream(filename));
         } catch (IOException io) {
-            System.out.printf("%s:reading the temporary file error", filename);
+            System.out.printf("%s:reading the temporary file error\n", filename);
             return false;
         }
         inBatch = null;
@@ -135,7 +135,7 @@ public class TupleReader {
                 in.close();
                 in = null;
             } catch (IOException io) {
-                System.out.printf("%s:reading the temporary file error", filename);
+                System.out.printf("%s:reading the temporary file error\n", filename);
                 System.out.println(io);
                 return false;
             }

@@ -78,7 +78,7 @@ public class PlanCost {
             return getStatistics((Scan) node);
         } else if (node.getOpType() == OpType.GROUPBY) {
             return getSortStatistics((GroupBy) node);
-        } else if (node.getOpType() == OpType.EXTERNALSORT) {
+        } else if (node.getOpType() == OpType.SORT) {
             return getSortStatistics((Sort) node);
         } else if (node.getOpType() == OpType.DISTINCT) {
             return getStatistics((Distinct) node);
@@ -100,13 +100,11 @@ public class PlanCost {
     }
 
     protected long getStatistics(Distinct node) {
-        long sortCost = getSortStatistics(node);
-        return sortCost;
+        return getSortStatistics(node);
     }
 
     protected long getStatistics(OrderBy node) {
-        long sortCost = getSortStatistics(node);
-        return sortCost;
+        return getSortStatistics(node);
     }
 
     /**
@@ -162,13 +160,11 @@ public class PlanCost {
             case JoinType.NESTEDJOIN:
                 joincost = leftpages * rightpages;
                 break;
-            case JoinType.BLOCKNESTED: //TODO: Error in calculation?
+            case JoinType.BLOCKNESTED:
                 joincost = leftpages + (long) Math.ceil(1.0 * leftpages / (numbuff - 2)) * rightpages;
-//                joincost = 1;
                 break;
             case JoinType.SORTMERGE:
-                joincost = 1; //TODO: Always choose sort merge, temporary
-//                joincost = 2 * leftpages * (long) (1 + Math.ceil( Math.log( Math.ceil(1.0 * leftpages / numbuff))));
+                joincost = 2 * leftpages * (long) (1 + Math.ceil( Math.log( Math.ceil(1.0 * leftpages / numbuff))));
                 break;
             default:
                 System.out.println("join type is not supported");
