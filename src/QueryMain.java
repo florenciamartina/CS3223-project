@@ -215,6 +215,8 @@ public class QueryMain {
                 out.print(((Integer) data).intValue() + "\t");
             } else if (data instanceof Float) {
                 out.print(((Float) data).floatValue() + "\t");
+            } else if (data instanceof Double) {
+                out.print(((Double) data).doubleValue() + "\t");
             } else if (data == null) {
                 out.print("-NULL-\t");
             } else {
