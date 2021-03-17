@@ -8,7 +8,6 @@ package qp.operators;
 import qp.utils.Attribute;
 import qp.utils.Batch;
 import qp.utils.Condition;
-import qp.utils.SortedRun;
 import qp.utils.Tuple;
 
 import java.io.*;
@@ -26,20 +25,20 @@ import java.util.Stack;
 
 public class SortMergeJoin extends Join {
 
-	private Sort leftSort;
-	private Sort rightSort;
+    private Sort leftSort;
+    private Sort rightSort;
 
     private int batchNum;
 
     private ArrayList<Integer> leftindex;   // Indices of the join attributes in left table
     private ArrayList<Integer> rightindex;  // Indices of the join attributes in right table
 
-	private ArrayList<Attribute> leftAttributeIndex;   //To support join
-	private ArrayList<Attribute> rightAttributeIndex;  //To support join
+    private ArrayList<Attribute> leftAttributeIndex;   //To support join
+    private ArrayList<Attribute> rightAttributeIndex;  //To support join
 
 
-	public SortMergeJoin(Join join) {
-    	super(join.getLeft(), join.getRight(), join.getConditionList(), join.getOpType());
+    public SortMergeJoin(Join join) {
+        super(join.getLeft(), join.getRight(), join.getConditionList(), join.getOpType());
         schema = join.getSchema();
         jointype = join.getJoinType();
         numBuff = join.getNumBuff();
@@ -67,21 +66,16 @@ public class SortMergeJoin extends Join {
         batchNum = Batch.getPageSize() / tupleSize;
 
 
-
         if (batchNum < 1) {
-            System.err.println(" Page Size must be larger than TupleSize in join operation");
+            System.err.println("Page Size must be larger than TupleSize in join operation");
             return false;
         }
 
         // Sort the 2 relations
-		leftSort = new Sort(left, numBuff, leftAttributeIndex);
-		rightSort = new Sort(right, numBuff, rightAttributeIndex);
+        leftSort = new Sort(left, numBuff, leftAttributeIndex);
+        rightSort = new Sort(right, numBuff, rightAttributeIndex);
 
-        if (!(leftSort.open() && rightSort.open())) {
-            return false;
-        } else {
-        	return true;
-        }
+        return leftSort.open() && rightSort.open();
     }
 
     /**
@@ -90,16 +84,16 @@ public class SortMergeJoin extends Join {
     @Override
     public Batch next() {
 
-        //debug
-        System.err.println("Calling SortMergeJoin next() method");
-        //debug
+//        //debug
+//        System.err.println("Calling SortMergeJoin next() method");
+//        //debug
 
-    	Batch joinBatch = findMatch();
-    	if (!joinBatch.isEmpty()) {
-    		return joinBatch;
-    	} else {
-    		return null;
-    	}
+        Batch joinBatch = findMatch();
+        if (!joinBatch.isEmpty()) {
+            return joinBatch;
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -107,10 +101,11 @@ public class SortMergeJoin extends Join {
      */
     @Override
     public boolean close() {
-    	return leftSort.close() && rightSort.close();
+        return leftSort.close() && rightSort.close();
     }
 
     //TODO: Stackoverflow just yolo [139 results]
+
     /**
      * from input buffers selects the tuples satisfying join condition
      **/
@@ -152,31 +147,96 @@ public class SortMergeJoin extends Join {
         Set<Tuple> rightSet = new HashSet<>();
 
 
-
-
         //TODO: Assume one condition first
-        int leftSingleIndex = leftindex.get(0);
-        int rightSingleIndex = rightindex.get(0);
+//        int leftSingleIndex = leftindex.get(0);
+//        int rightSingleIndex = rightindex.get(0);
 
+
+//        while (leftTuple != null && rightTuple != null) {
+//
+//
+//
+//            //get the minimum value of the 2 for their 2 sorting keys
+//            int compare = Tuple.compareTuples(leftTuple, rightTuple, leftSingleIndex, rightSingleIndex);
+//            Object minimumKey;
+//            if (compare < 0) {
+//                //Take left one as it is smaller
+//                minimumKey = leftTuple.dataAt(leftSingleIndex);
+//            } else {
+//                minimumKey = rightTuple.dataAt(rightSingleIndex);
+//            }
+//
+//            while (leftTuple != null && compareWithMinimumKey(leftTuple, leftSingleIndex, minimumKey) == 0) {
+//                leftSet.add(leftTuple);
+//                leftTuple = leftTuples.pollFirst();
+//            }
+//
+//            while (rightTuple != null && compareWithMinimumKey(rightTuple, rightSingleIndex, minimumKey) == 0) {
+//                rightSet.add(rightTuple);
+//                rightTuple = rightTuples.pollFirst();
+//            }
+//
+//            join(leftSet, rightSet, joinBatch);
+//            leftSet.clear();
+//            rightSet.clear();
+//        }
 
         while (leftTuple != null && rightTuple != null) {
 
-            //get the minimum value of the 2 for their 2 sorting keys
-            int compare = Tuple.compareTuples(leftTuple, rightTuple, leftSingleIndex, rightSingleIndex);
-            Object minimumKey;
-            if (compare < 0) {
-                //Take left one as it is smaller
-                minimumKey = leftTuple.dataAt(leftSingleIndex);
-            } else {
-                minimumKey = rightTuple.dataAt(rightSingleIndex);
+            int compare = 0;
+            int conditionPos = 0;
+            for (int i = 0; i < leftindex.size(); i++) {
+                int leftSingleIndex = leftindex.get(i);
+                int rightSingleIndex = rightindex.get(i);
+                //get the minimum value of the 2 for their 2 sorting keys
+                compare = Tuple.compareTuples(leftTuple, rightTuple, leftSingleIndex, rightSingleIndex);
+                if (compare == 0) {
+                    conditionPos++;
+                } else {
+                    break;
+                }
             }
 
-            while (leftTuple != null && compareWithMinimumKey(leftTuple, leftSingleIndex, minimumKey) == 0) {
+            Tuple leftComparatorTuple = null;
+            Tuple rightComparatorTuple = null;
+            //Comparators to stop the loop
+            if (compare == 0) {
+                leftComparatorTuple = leftTuple;
+                rightComparatorTuple = rightTuple;
+            } else if (compare < 0) {
+                leftComparatorTuple = leftTuple;
+            } else {
+                rightComparatorTuple = rightTuple;
+            }
+
+            //Comparators to proceed the loop on the eliminating table, assuming the null is passed
+            ArrayList<Integer> leftAttributeIndexes = new ArrayList<>();
+            ArrayList<Integer> rightAttributeIndexes = new ArrayList<>();
+            if (compare == 0) {
+                //Just take the entire indices
+                leftAttributeIndexes = leftindex;
+                rightAttributeIndexes = rightindex;
+            } else {
+                //Include the one it stopped at
+                for (int i = 0; i <= conditionPos; i++) {
+                    leftAttributeIndexes.add(leftindex.get(i));
+                }
+
+                for (int i = 0; i <= conditionPos; i++) {
+                    rightAttributeIndexes.add(rightindex.get(i));
+                }
+            }
+
+            //Removing of tuples based on the stopping attributes for each table if applicable
+            while (leftComparatorTuple != null && leftTuple != null
+                    && Sort.compareTuples(leftComparatorTuple, leftTuple, leftAttributeIndexes) == 0) {
                 leftSet.add(leftTuple);
                 leftTuple = leftTuples.pollFirst();
             }
 
-            while (rightTuple != null && compareWithMinimumKey(rightTuple, rightSingleIndex, minimumKey) == 0) {
+            //Removing of tuples based on the stopping attributes for each table if applicable
+            while (rightComparatorTuple != null && rightTuple != null
+                    && Sort.compareTuples(rightComparatorTuple, rightTuple, rightAttributeIndexes) == 0) {
                 rightSet.add(rightTuple);
                 rightTuple = rightTuples.pollFirst();
             }
@@ -191,12 +251,12 @@ public class SortMergeJoin extends Join {
 
 
     private void join(Set<Tuple> leftSet, Set<Tuple> rightSet, Batch joinBatch) {
-    	for (Tuple leftTuple : leftSet) {
-    		for (Tuple rightTuple : rightSet) {
-	        	Tuple joinTuple = leftTuple.joinWith(rightTuple);
-	            joinBatch.add(joinTuple);
-    		}
-    	}
+        for (Tuple leftTuple : leftSet) {
+            for (Tuple rightTuple : rightSet) {
+                Tuple joinTuple = leftTuple.joinWith(rightTuple);
+                joinBatch.add(joinTuple);
+            }
+        }
     }
 
 
@@ -217,19 +277,45 @@ public class SortMergeJoin extends Join {
     }
 
 
-
     // Debugging
-    private void printTuple(Tuple t)  {
+    private void printTuple(Tuple t) {
         System.out.print("(");
         System.out.print(t.dataAt(0) + " ");
-        System.out.print(t.dataAt(1)+ " ");
-        System.out.print(t.dataAt(2)+ " ");
-        System.out.print(t.dataAt(3)+ " ");
+        System.out.print(t.dataAt(1) + " ");
+        System.out.print(t.dataAt(2) + " ");
+        System.out.print(t.dataAt(3) + " ");
 
 
         System.out.println(")");
     }
 
+    /**
+     * Comparing tuples in different tables with multiple conditions, used for join condition checking
+     **/
+    public static int compareTuples(Tuple left, Tuple right, ArrayList<Integer> leftIndex, ArrayList<Integer> rightIndex) {
+        if (leftIndex.size() != rightIndex.size()) {
+            System.out.println("Tuple: Unknown comparision of the tuples");
+            System.exit(1);
+            return 0;
+        }
+        for (int i = 0; i < leftIndex.size(); ++i) {
+            Object leftdata = left.dataAt(leftIndex.get(i));
+            Object rightdata = right.dataAt(rightIndex.get(i));
+            if (leftdata.equals(rightdata)) continue;
+            if (leftdata instanceof Integer) {
+                return ((Integer) leftdata).compareTo((Integer) rightdata);
+            } else if (leftdata instanceof String) {
+                return ((String) leftdata).compareTo((String) rightdata);
+            } else if (leftdata instanceof Float) {
+                return ((Float) leftdata).compareTo((Float) rightdata);
+            } else {
+                System.out.println("Tuple: Unknown comparision of the tuples");
+                System.exit(1);
+                return 0;
+            }
+        }
+        return 0;
+    }
 
 
 }

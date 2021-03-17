@@ -90,7 +90,7 @@ public class TupleWriter {
                 out.close();
                 out = null;
             } catch (IOException io) {
-                System.out.printf("%s:writing the temporary file error", filename);
+                System.out.printf("%s:writing the temporary file error\n", filename);
                 System.out.println(io);
                 System.exit(1);
             }

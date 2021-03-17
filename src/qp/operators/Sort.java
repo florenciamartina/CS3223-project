@@ -4,20 +4,11 @@
 
 package qp.operators;
 
-import java.io.EOFException;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.util.ArrayList;
+
 import qp.optimizer.BufferManager;
-import qp.utils.Attribute;
-import qp.utils.Batch;
-import qp.utils.Schema;
-import qp.utils.SortedRun;
-import qp.utils.Tuple;
+import qp.utils.*;
 
 public class Sort extends Operator {
 
@@ -25,8 +16,8 @@ public class Sort extends Operator {
     Operator base;
     ArrayList<Integer> attributeIndexes;
     ArrayList<Attribute> attributes;
-    ObjectInputStream in;       // Input file being scanned
-    ObjectOutputStream out;     // Output file being written
+    TupleReader tupleReader;
+    TupleWriter tupleWriter;
 
     /**
      * The following fields are required during
@@ -42,15 +33,15 @@ public class Sort extends Operator {
     int numOfBuff;
     int numSortedRuns;
     int numOfPasses = 0;
-    SortedRun sorted;
-    ArrayList<SortedRun> sortedRuns;
+    ArrayList<Tuple> sorted;
     int totalSize = 0;          // debugging purposes
+    int readSize = 0;           // debugging purposes
 
     /**
      * constructor
      **/
     public Sort(Operator base, int numOfBuff, ArrayList<Attribute> attributeList, boolean isAsc, boolean isDistinct) {
-        super(OpType.EXTERNALSORT);
+        super(OpType.SORT);
         this.base = base;
         this.schema = base.schema;
         this.numOfBuff = numOfBuff;
@@ -64,9 +55,6 @@ public class Sort extends Operator {
     }
 
     public boolean open() {
-
-        System.out.println("ascending" + this.isAsc);
-
         // Base is to be materialized for Sort to perform
         if (!base.open()) {
             return false;
@@ -77,6 +65,11 @@ public class Sort extends Operator {
         // Select the number of tuples per batch
         int tupleSize = schema.getTupleSize();
         batchSize = Batch.getPageSize() / tupleSize;
+
+        if (batchSize <= 0) {
+            System.err.println("Page size must be larger than Tuple size in join operation");
+            return false;
+        }
 
         // Find the index for each attribute
         this.attributeIndexes = new ArrayList<>();
@@ -94,20 +87,25 @@ public class Sort extends Operator {
         mergeSortedRuns();
 
         // Read final sorted run
-        try {
-            numOfPasses++;
-            System.out.println("Sorted Runs:" + numSortedRuns);
-            System.out.println("Passes: " + numOfPasses);
-            String filename = String.format("SortTemp-P%d", numOfPasses == 1 ? 0 : numOfPasses);
-            in = new ObjectInputStream(new FileInputStream(filename));
-            sorted = (SortedRun) in.readObject();
-            System.out.println("SortedSize: " + sorted.size());
-
-        } catch (ClassNotFoundException cnf) {
-            System.err.println("Sort: Class not found");
-        } catch (IOException io) {
-            System.err.println("Sort: Error in reading from temporary file");
+        numOfPasses++;
+        String filename = String.format("SortTemp-P%d-SR0", numOfPasses == 1 ? 0 : numOfPasses);
+        tupleReader = new TupleReader(filename, batchSize * numSortedRuns);
+        tupleReader.open();
+        sorted = new ArrayList<>();
+        while (!tupleReader.isEOF()) {
+            sorted.add(tupleReader.next());
         }
+        tupleReader.close();
+
+        if (sorted.size() != totalSize) {
+            System.err.println("Error in performing Sort operation");
+            System.err.println("Num of read tuples != Num of generated tuples");
+            return false;
+        }
+
+        // Cleanup
+        File f = new File(filename);
+        f.delete();
 
         return true;
     }
@@ -117,7 +115,7 @@ public class Sort extends Operator {
         // Close when end of stream
         if (eos) {
             close();
-            System.out.println(totalSize);
+            printStatistics();
             return null;
         }
 
@@ -125,8 +123,8 @@ public class Sort extends Operator {
         outBatch = new Batch(batchSize);
 
         while (!outBatch.isFull() && !sorted.isEmpty()) {
-            outBatch.add(sorted.poll());
-            totalSize++;
+            outBatch.add(sorted.get(0));
+            sorted.remove(0);
         }
 
         if (sorted.isEmpty()) {
@@ -139,186 +137,209 @@ public class Sort extends Operator {
 
     private int generateSortedRuns() {
 
-        int numSortedRun = 0;
+        int numSortedRuns = 0;
         Batch inputBatch;
 
-        sortedRuns = new ArrayList<>();
+        // Generate sorted runs
+        while ((inputBatch = base.next()) != null) {
+            String filename = String.format("SortTemp-P0-SR%d", numSortedRuns);
 
-        try {
-            String filename = "SortTemp-P0";
-            out = new ObjectOutputStream(new FileOutputStream(filename));
+            // Tuples in current sorted run
+            ArrayList<Tuple> tuples = new ArrayList<>();
 
-            // Generate sorted runs
-            while ((inputBatch = base.next()) != null) {
+            // Read-in tuples
+            for (int i = 0; i < numOfBuff; i++) {
+                tuples.addAll(inputBatch.getTuples());
 
-                // Tuples in current sorted run
-                ArrayList<Tuple> tuples = new ArrayList<>();
-
-                // Read-in tuples
-                for (int i = 0; i < numOfBuff; i++) {
-                    tuples.addAll(inputBatch.getTuples());
-
-                    if (i < numOfBuff - 1) {
-                        inputBatch = base.next();
-                        if (inputBatch == null) {
-                            break;
-                        }
-                    }
-                }
-
-                // Sort the tuples and generate sorted run
-                SortedRun sr = isAsc
-                    ? new SortedRun(tuples, attributeIndexes)
-                    : new SortedRun(tuples, attributeIndexes, false);
-                sortedRuns.add(sr);
-
-                // Write sorted runs
-                out.writeObject(sr);
-
-                numSortedRun++;
-            }
-
-            out.close();
-
-        } catch (IOException io) {
-            System.out.println("Sort: Error writing to temporary file.");
-        }
-
-        return numSortedRun;
-    }
-
-    private void mergeSortedRuns() {
-        try {
-            String fileOutput = String.format("SortTemp-P%d", numOfPasses + 1);
-            out = new ObjectOutputStream(new FileOutputStream(fileOutput));
-
-            String fileInput = String.format("SortTemp-P%d", numOfPasses);
-            in = new ObjectInputStream(new FileInputStream(fileInput));
-
-            boolean updatePass = false;
-            SortedRun merged = null;
-            while (numSortedRuns > 1) {
-                System.out.println("Start loop pass #" + numOfPasses);
-
-                // Read in sorted runs
-                ArrayList<SortedRun> mergedSortedRuns = new ArrayList<>();
-                int numOfMergedSortedRuns = Math.min(numOfBuff - 1, numSortedRuns);
-                SortedRun sr;
-                for (int i = 0; i < numOfMergedSortedRuns; i++) {
-                    try {
-                        sr = (SortedRun) in.readObject();
-                        mergedSortedRuns.add(sr);
-                    } catch (EOFException eof) {
-                        updatePass = true;
+                if (i < numOfBuff - 1) {
+                    inputBatch = base.next();
+                    if (inputBatch == null) {
                         break;
                     }
                 }
-
-                // Merge sorted runs
-                Batch mergeOutput = new Batch(batchSize);
-                SortedRun selectedSortedRun;
-
-                Tuple prevTuple = null;
-                Tuple currTuple;
-                while (!mergedSortedRuns.stream().allMatch(SortedRun::isEmpty)) {
-                    selectedSortedRun = findSelectedSortedRun(mergedSortedRuns, mergedSortedRuns.size(), isAsc);
-
-                    currTuple = selectedSortedRun.poll();
-                    if (!isDistinct || prevTuple == null || isDistinct(prevTuple, currTuple)) {
-                        mergeOutput.add(currTuple);
-                    }
-
-                    prevTuple = currTuple;
-//                    mergeOutput.add(selectedSortedRun.poll());
-                }
-
-                sortedRuns.removeIf(SortedRun::isEmpty);
-                merged = new SortedRun(mergeOutput.getTuples());
-                sortedRuns.add(merged);
-
-                numSortedRuns -= mergedSortedRuns.size();
-
-                // Write merged sorted runs
-                numSortedRuns++;
-                out.writeObject(merged);
-                System.out.print("Merged: ");
-                printSortedRun(merged);
-
-                if (updatePass) {
-                    numOfPasses++;
-
-                    fileOutput = String.format("SortTemp-P%d", numOfPasses + 1);
-                    out = new ObjectOutputStream(new FileOutputStream(fileOutput));
-
-                    fileInput = String.format("SortTemp-P%d", numOfPasses);
-                    in = new ObjectInputStream(new FileInputStream(fileInput));
-
-                    updatePass = false;
-                }
             }
 
-            in.close();
-            out.close();
+            // Sort the tuples and generate sorted run
+            if (isAsc) {
+                tuples.sort((x, y) -> compareTuples(x, y, attributeIndexes));
+            } else {
+                tuples.sort((x, y) -> compareTuples(y, x, attributeIndexes));
+            }
 
-        } catch (ClassNotFoundException cnf) {
-            System.err.println("Sort: Class not found");
-        } catch (IOException io) {
-            System.err.println("Sort: Error in reading sorted runs");
+            // Write sorted runs
+            tupleWriter = new TupleWriter(filename, batchSize);
+            tupleWriter.open();
+            for (Tuple t : tuples) {
+                tupleWriter.next(t);
+                totalSize++;
+            }
+            tupleWriter.close();
+
+            numSortedRuns++;
         }
 
+        return numSortedRuns;
     }
 
-    private SortedRun findSelectedSortedRun(ArrayList<SortedRun> sortedRuns, int numOfMergedSortedRuns, boolean isAsc) {
-        Tuple selectedTuple = null;
-        SortedRun selectedSortedRun = null;
-        int compareResult;
-        for (int i = 0; i < numOfMergedSortedRuns; i++) {
+    private void mergeSortedRuns() {
 
-            if (sortedRuns.get(i).isEmpty()) {
-                continue;
+        int totalSRs = this.numSortedRuns;
+        int numInputBuffers = numOfBuff - 1;
+
+        int readSRs = 0;
+        int writeSRs = 0;
+        int genSRs = numSortedRuns;
+
+//        int writeSize = 0;
+
+        boolean updatePass = false;
+        while (totalSRs > 1) {
+
+            // Setup input buffers
+            ArrayList<Batch> inputBuffers = new ArrayList<>();
+
+            ArrayList<TupleReader> tupleReaders = new ArrayList<>();
+            int numMergedSRs = Math.min(numInputBuffers, genSRs);
+            for (int i = 0; i < numMergedSRs; i++) {
+
+                if (genSRs <= readSRs + i) {
+                    updatePass = true;
+                    break;
+                }
+
+                String sortedRunFile = String.format("SortTemp-P%d-SR%d", numOfPasses, readSRs + i);
+                TupleReader tr = new TupleReader(sortedRunFile, batchSize);
+                tr.open();
+                tupleReaders.add(tr);
             }
 
-            Tuple currTuple = sortedRuns.get(i).peek();
+            numMergedSRs = tupleReaders.size();
+            readSRs += numMergedSRs;
+
+            // Read input buffers
+            for (TupleReader tr : tupleReaders) {
+                Batch b = new Batch(batchSize);
+                while (!b.isFull() && !tr.isEOF()) {
+                    b.add(tr.next());
+                    readSize++;
+                }
+
+                if (tr.isEOF()) {
+                    tr.close();
+                }
+
+                inputBuffers.add(b);
+            }
+
+            // Find selected buffer to get tuple and write to output
+            String fileOutput = String.format("SortTemp-P%d-SR%d", numOfPasses + 1, writeSRs);
+            tupleWriter = new TupleWriter(fileOutput, batchSize);
+            tupleWriter.open();
+
+            Tuple prevTuple = null;
+            while (!inputBuffers.stream().allMatch(Batch::isEmpty)) {
+                Tuple currTuple = getTuple(inputBuffers, tupleReaders);
+                if (!isDistinct || prevTuple == null || isDistinct(prevTuple, currTuple)) {
+                    tupleWriter.next(currTuple);
+//                    writeSize++;
+                }
+
+                prevTuple = currTuple;
+
+                for (int i = 0; i < numMergedSRs; i++) {
+                    Batch inputBuffer = inputBuffers.get(i);
+                    TupleReader tr = tupleReaders.get(i);
+
+                    if (!inputBuffer.isEmpty() || tr.isEOF()) {
+                        continue;
+                    }
+
+                    while (!inputBuffer.isFull() && !tr.isEOF()) {
+                        inputBuffer.add(tr.next());
+//                        readSize++;
+                    }
+                }
+            }
+
+            tupleWriter.close();
+
+            totalSRs -= numMergedSRs;
+            writeSRs++;
+            totalSRs++;
+
+            if (updatePass) {
+//                System.out.printf("Read SRs #%d: %d\n", numOfPasses + 1, readSRs);
+                genSRs = writeSRs;
+                readSRs = 0;
+                writeSRs = 0;
+                numOfPasses++;
+//                System.out.printf("Read size #%d: %d\n", numOfPasses, readSize);
+//                System.out.printf("Write size #%d: %d\n", numOfPasses, writeSize);
+//                readSize = 0;
+//                writeSize = 0;
+                updatePass = false;
+            }
+        }
+    }
+
+    private Tuple getTuple(ArrayList<Batch> inputBuffers, ArrayList<TupleReader> tupleReaders) {
+
+        Tuple selectedTuple = null;
+        Batch selectedBatch = null;
+        int compareResult;
+
+        for (int i = 0; i < inputBuffers.size(); i++) {
+
+            Batch inputBuffer = inputBuffers.get(i);
+
+            if (inputBuffer.isEmpty()) {
+                TupleReader tr = tupleReaders.get(i);
+                while (!tr.isEOF() && !inputBuffer.isFull()) {
+                    inputBuffer.add(tr.next());
+                    readSize++;
+                }
+            }
+
+            if (inputBuffer.isEmpty()) continue;
+
+            Tuple currTuple = inputBuffer.peek();
 
             if (selectedTuple == null) {
                 selectedTuple = currTuple;
-                selectedSortedRun = sortedRuns.get(i);
+                selectedBatch = inputBuffer;
+                continue;
             }
 
-            compareResult = SortedRun.compareTuples(currTuple, selectedTuple, attributeIndexes);
+            compareResult = compareTuples(currTuple, selectedTuple, attributeIndexes);
 
             if ((isAsc && compareResult >= 0) || (!isAsc && compareResult <= 0)) {
                 continue;
             }
 
             selectedTuple = currTuple;
-            selectedSortedRun = sortedRuns.get(i);
+            selectedBatch = inputBuffer;
         }
 
-        return selectedSortedRun;
+        assert selectedBatch != null;
+
+        return selectedBatch.poll();
     }
 
     public boolean close() {
 
-        // Close streams
-        try {
-            if (in != null) {
-                in.close();
-            }
-            if (out != null) {
-                out.close();
-            }
-        } catch (IOException io) {
-            System.err.println("Sort: Failed to close streams");
-        }
-
         // Remove temp files
         System.gc();
         for (int i = 0; i <= numOfPasses; i++) {
-            String filename = String.format("SortTemp-P%d", i);
-            File f = new File(filename);
-            f.delete();
+            int j = 0;
+            while (true) {
+                String filename = String.format("SortTemp-P%d-SR%d", i, j);
+                File f = new File(filename);
 
+                if (!f.exists()) break;
+
+                f.delete();
+                j++;
+            }
         }
 
         return true;
@@ -326,58 +347,60 @@ public class Sort extends Operator {
 
 
     public Object clone() {
-        Operator newbase = (Operator) base.clone();
+        Operator newBase = (Operator) base.clone();
         int numOfBuff = BufferManager.getBuffersPerJoin();
-        ArrayList<Attribute> newattr = new ArrayList<>();
-        for (int i = 0; i < attributes.size(); ++i) {
-            newattr.add((Attribute) attributes.get(i).clone());
+        ArrayList<Attribute> newAttr = new ArrayList<>();
+        for (Attribute attribute : attributes) {
+            newAttr.add((Attribute) attribute.clone());
         }
-        Sort newsorter = new Sort(newbase, numOfBuff, newattr);
-        newsorter.setSchema((Schema) newbase.getSchema().clone());
-        return newsorter;
+        Sort newSorter = new Sort(newBase, numOfBuff, newAttr);
+        newSorter.setSchema((Schema) newBase.getSchema().clone());
+        return newSorter;
+    }
+
+    /**
+     * Compare tuples based on the given attributes
+     */
+    public static int compareTuples(Tuple t1, Tuple t2, ArrayList<Integer> attributeIndexes) {
+        int result = 0;
+        for (int index : attributeIndexes) {
+            result = Tuple.compareTuples(t1, t2, index);
+            if (result != 0) {
+                break;
+            }
+        }
+
+        return result;
     }
 
     /**
      * To check whether the current tuple is already present
      **/
     private boolean isDistinct(Tuple tuple1, Tuple tuple2) {
-        int result;
 
-        if (!this.attributeIndexes.isEmpty()) {
-            for (Integer i : attributeIndexes) {
-                result = Tuple.compareTuples(tuple1, tuple2, i);
-
-                if (result != 0) {
-                    return true;
-                }
-            }
-            return false;
-
-        } else {
+        if (attributeIndexes.isEmpty()) {
             return !tuple1.equals(tuple2);
         }
-    }
 
-    // Debugging
-    private void printSortedRun(SortedRun sr) {
-        System.out.print("[");
-        for (Tuple t : sr.getSortedTuples()) {
-            System.out.print(t.dataAt(0));
-            System.out.print(", ");
-        }
-        System.out.println("]");
-    }
+        int result;
+        for (Integer i : attributeIndexes) {
+            result = Tuple.compareTuples(tuple1, tuple2, i);
 
-    private void printSortedRuns(ArrayList<SortedRun> sortedRuns) {
-        int i = 1;
-        for (SortedRun sr : sortedRuns) {
-            System.out.print("SR #" + i + ": ");
-            printSortedRun(sr);
-            i++;
+            if (result != 0) {
+                return true;
+            }
         }
+        return false;
     }
 
     public Operator getBase() {
         return this.base;
+    }
+
+    // Debugging
+    private void printStatistics() {
+        System.out.println("Sorted Runs: " + numSortedRuns);
+        System.out.println("Passes: " + numOfPasses);
+        System.out.printf("Total tuples: %d\n", totalSize);
     }
 }
