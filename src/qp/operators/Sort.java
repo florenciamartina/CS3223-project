@@ -241,8 +241,8 @@ public class Sort extends Operator {
                 // Write merged sorted runs
                 numSortedRuns++;
                 out.writeObject(merged);
-                System.out.print("Merged: ");
-                printSortedRun(merged);
+//                System.out.print("Merged: ");
+//                printSortedRun(merged);
 
                 if (updatePass) {
                     numOfPasses++;

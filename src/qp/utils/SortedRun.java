@@ -12,6 +12,9 @@ public class SortedRun implements Serializable {
         this.sortedTuples = sortedTuples;
     }
 
+    /**
+     * Compare two tuples in the same table on a list of given attributes
+     **/
     public static int compareTuples(Tuple t1, Tuple t2, ArrayList<Integer> attributeIndexes) {
         int result = 0;
         for (int index: attributeIndexes) {
@@ -24,6 +27,7 @@ public class SortedRun implements Serializable {
         return result;
     }
 
+    //TODO: Need to overload this one
     public SortedRun(ArrayList<Tuple> tuples, ArrayList<Integer> attributeIndexes, boolean isAsc) {
 
         if (isAsc) {
