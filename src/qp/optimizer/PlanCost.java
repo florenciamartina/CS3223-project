@@ -167,8 +167,8 @@ public class PlanCost {
 //                joincost = 1;
                 break;
             case JoinType.SORTMERGE:
-//                joincost = 1; //TODO: Always choose sort merge, temporary
-                joincost = 2 * leftpages * (long) (1 + Math.ceil( Math.log( Math.ceil(1.0 * leftpages / numbuff))));
+                joincost = 1; //TODO: Always choose sort merge, temporary
+//                joincost = 2 * leftpages * (long) (1 + Math.ceil( Math.log( Math.ceil(1.0 * leftpages / numbuff))));
                 break;
             default:
                 System.out.println("join type is not supported");
