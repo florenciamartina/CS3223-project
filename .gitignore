@@ -15,8 +15,13 @@ hs_err_pid*
 out/
 .idea/
 .idea_modules/
+classes/
 *.iml
 *.ipr
 *.iws
 
 /testcases/
+/experiments/*.txt
+/experiments/*.tbl
+/experiments/*.md
+/experiments/*.stat

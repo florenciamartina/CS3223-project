@@ -74,7 +74,6 @@ public class RandomInitialPlan {
 
         if (sqlquery.isDistinct()) {
             createDistinctOp();
-            System.out.println("DISTINCT!!");
         }
 
         return root;
@@ -185,7 +184,8 @@ public class RandomInitialPlan {
             /** randomly select a join type**/
             int numJMeth = JoinType.numJoinTypes();
 //            int joinMeth = RandNumb.randInt(0, numJMeth - 1); // default
-            int joinMeth = JoinType.SORTMERGE; // set jointype = blockNested
+//            int joinMeth = JoinType.BLOCKNESTED; // set jointype = blockNested
+            int joinMeth = JoinType.SORTMERGE;
             jn.setJoinType(joinMeth);
             modifyHashtable(left, jn);
             modifyHashtable(right, jn);

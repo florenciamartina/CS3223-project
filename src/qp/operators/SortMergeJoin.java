@@ -74,8 +74,8 @@ public class SortMergeJoin extends Join {
         }
 
         // Sort the 2 relations
-		leftSort = new Sort(left, numBuff, leftAttributeIndex, true);
-		rightSort = new Sort(right, numBuff, rightAttributeIndex, true);
+		leftSort = new Sort(left, numBuff, leftAttributeIndex);
+		rightSort = new Sort(right, numBuff, rightAttributeIndex);
 
         if (!(leftSort.open() && rightSort.open())) {
             return false;
@@ -90,8 +90,11 @@ public class SortMergeJoin extends Join {
     @Override
     public Batch next() {
 
+        //debug
+        System.err.println("Calling SortMergeJoin next() method");
+        //debug
+
     	Batch joinBatch = findMatch();
-        printJoinedTuples(joinBatch);
     	if (!joinBatch.isEmpty()) {
     		return joinBatch;
     	} else {
@@ -119,16 +122,24 @@ public class SortMergeJoin extends Join {
         Batch leftBatch = leftSort.next();
         Batch rightBatch = rightSort.next();
 
-
-
         //defensive in case nullpointer
         if (leftBatch == null || rightBatch == null) {
             return joinBatch;
         }
 
-        List<Tuple> leftFetch = leftBatch.getTuples();
-        List<Tuple> rightFetch = rightBatch.getTuples();
+        //TODO: Assume we're able to add all tuples into main memory
+        ArrayList<Tuple> leftFetch = new ArrayList<>();
+        ArrayList<Tuple> rightFetch = new ArrayList<>();
 
+        while (leftBatch != null) {
+            leftFetch.addAll(leftBatch.getTuples());
+            leftBatch = leftSort.next();
+        }
+
+        while (rightBatch != null) {
+            rightFetch.addAll(rightBatch.getTuples());
+            rightBatch = rightSort.next();
+        }
 
 
         Deque<Tuple> leftTuples = new ArrayDeque<>(leftFetch);
@@ -140,11 +151,16 @@ public class SortMergeJoin extends Join {
         Set<Tuple> leftSet = new HashSet<>();
         Set<Tuple> rightSet = new HashSet<>();
 
-        //TODO: Hardcode to allow 1 pair of join first
+
+
+
+        //TODO: Assume one condition first
         int leftSingleIndex = leftindex.get(0);
         int rightSingleIndex = rightindex.get(0);
-//        while (!joinBatch.isFull() && leftTuple != null && rightTuple != null) {
+
+
         while (leftTuple != null && rightTuple != null) {
+
             //get the minimum value of the 2 for their 2 sorting keys
             int compare = Tuple.compareTuples(leftTuple, rightTuple, leftSingleIndex, rightSingleIndex);
             Object minimumKey;
@@ -172,7 +188,8 @@ public class SortMergeJoin extends Join {
 
         return joinBatch;
     }
-    
+
+
     private void join(Set<Tuple> leftSet, Set<Tuple> rightSet, Batch joinBatch) {
     	for (Tuple leftTuple : leftSet) {
     		for (Tuple rightTuple : rightSet) {
@@ -182,22 +199,8 @@ public class SortMergeJoin extends Join {
     	}
     }
 
-    private void printJoinedTuples(Batch output) {
 
-        System.out.print("[");
-        for (Tuple t : output.getTuples()) {
-            System.out.print("(");
-            System.out.print(t.dataAt(0)); //customer cid
-            System.out.print(", ");
-            System.out.print(t.dataAt(5)); //5+ cart id position(0)
-            System.out.print(", ");
-            System.out.print(t.dataAt(6)); //5+ cart cust_id foreign key position(1)
-            System.out.print(")");
-        }
-        System.out.println("]");
-    }
-
-    //TODO: Move to sort merge as Tuple causes scanning problems
+    //Compares a Tuple with a value of the joining attribute
     public static int compareWithMinimumKey(Tuple tuple, int tupleIndex, Object minimumKey) {
         Object tupleData = tuple.dataAt(tupleIndex);
         if (tupleData instanceof Integer) {
@@ -212,4 +215,21 @@ public class SortMergeJoin extends Join {
             return 0;
         }
     }
+
+
+
+    // Debugging
+    private void printTuple(Tuple t)  {
+        System.out.print("(");
+        System.out.print(t.dataAt(0) + " ");
+        System.out.print(t.dataAt(1)+ " ");
+        System.out.print(t.dataAt(2)+ " ");
+        System.out.print(t.dataAt(3)+ " ");
+
+
+        System.out.println(")");
+    }
+
+
+
 }
