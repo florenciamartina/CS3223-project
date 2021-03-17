@@ -9,11 +9,39 @@ import qp.utils.*;
 
 import java.io.FileInputStream;
 import java.io.ObjectInputStream;
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.HashMap;
+import java.util.*;
 
 public class RandomInitialPlan {
+
+    public static class Key <T, V> {
+        private final T key1;
+        private final V key2;
+
+        public Key(T key1, V key2) {
+            this.key1 = key1;
+            this.key2 = key2;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+
+            if (o instanceof Key) {
+                Key<T, V> k = (Key<T, V>) o;
+                return (k.key1.equals(key1) && k.key2.equals(key2))
+                        || k.key2.equals(key1) && k.key1.equals(key2);
+            }
+
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(key1, key2);
+        }
+    }
 
     SQLQuery sqlquery;
 
@@ -27,6 +55,8 @@ public class RandomInitialPlan {
     HashMap<String, Operator> tab_op_hash;  // Table name to the Operator
     Operator root;          // Root of the query plan tree
 
+    ArrayList<ArrayList<Condition>> groupedJoinList;
+
     public RandomInitialPlan(SQLQuery sqlquery) {
         this.sqlquery = sqlquery;
         projectlist = sqlquery.getProjectList();
@@ -35,8 +65,29 @@ public class RandomInitialPlan {
         joinlist = sqlquery.getJoinList();
         groupbylist = sqlquery.getGroupByList();
         orderbylist = sqlquery.getOrderByList();
+        numJoin = calculateNumJoins();
+        System.out.printf("NumJoins: %d\n", numJoin);
+    }
 
-        numJoin = joinlist.size();
+    private int calculateNumJoins() {
+
+        HashMap<Key<String, String>, ArrayList<Condition>> joinConditions = new HashMap<>();
+        for (Condition c: joinlist) {
+            String currLHS = c.getLhs().getTabName();
+            String currRHS = ((Attribute) c.getRhs()).getTabName();
+
+            Key<String, String> key = new Key<>(currLHS, currRHS);
+
+            if (!joinConditions.containsKey(key)) {
+                joinConditions.put(key, new ArrayList<>());
+            }
+
+            joinConditions.get(key).add(c);
+        }
+
+        groupedJoinList = new ArrayList<>(joinConditions.values());
+
+        return joinConditions.size();
     }
 
     /**
@@ -59,14 +110,10 @@ public class RandomInitialPlan {
         }
 
         if (sqlquery.getGroupByList().size() > 0) {
-//            System.err.println("GroupBy is not implemented.");
-//            System.exit(1);
             createGroupByOp();
         }
 
         if (sqlquery.getOrderByList().size() > 0) {
-//            System.err.println("Orderby is not implemented.");
-//            System.exit(1);
             createOrderByOp();
         }
 
@@ -171,12 +218,14 @@ public class RandomInitialPlan {
             while (bitCList.get(jnnum)) {
                 jnnum = RandNumb.randInt(0, numJoin - 1);
             }
-            Condition cn = (Condition) joinlist.get(jnnum);
+//            Condition cn = (Condition) joinlist.get(jnnum);
+            ArrayList<Condition> cns = groupedJoinList.get(jnnum);
+            Condition cn = cns.get(0);
             String lefttab = cn.getLhs().getTabName();
             String righttab = ((Attribute) cn.getRhs()).getTabName();
             Operator left = (Operator) tab_op_hash.get(lefttab);
             Operator right = (Operator) tab_op_hash.get(righttab);
-            jn = new Join(left, right, cn, OpType.JOIN);
+            jn = new Join(left, right, cns, OpType.JOIN);
             jn.setNodeIndex(jnnum);
             Schema newsche = left.getSchema().joinWith(right.getSchema());
             jn.setSchema(newsche);
@@ -184,8 +233,8 @@ public class RandomInitialPlan {
             /** randomly select a join type**/
             int numJMeth = JoinType.numJoinTypes();
 //            int joinMeth = RandNumb.randInt(0, numJMeth - 1); // default
-//            int joinMeth = JoinType.BLOCKNESTED; // set jointype = blockNested
-            int joinMeth = JoinType.SORTMERGE;
+            int joinMeth = JoinType.BLOCKNESTED; // set jointype = blockNested
+//            int joinMeth = JoinType.SORTMERGE;
             jn.setJoinType(joinMeth);
             modifyHashtable(left, jn);
             modifyHashtable(right, jn);

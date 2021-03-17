@@ -228,13 +228,12 @@ public class RandomOptimizer {
         if (numJMeth > 1) {
             /** find the node that is to be altered **/
             Join node = (Join) findNodeAt(root, joinNum);
-            int prevJoinMeth = node.getJoinType();
+//            int prevJoinMeth = node.getJoinType();
 //            int joinMeth = RandNumb.randInt(0, numJMeth - 1);
-            int joinMeth = JoinType.BLOCKNESTED;
 //            while (joinMeth == prevJoinMeth) {
-////                joinMeth = RandNumb.randInt(0, numJMeth - 1);
-//                joinMeth = JoinType.BLOCKNESTED;
+//                joinMeth = RandNumb.randInt(0, numJMeth - 1);
 //            }
+            int joinMeth = JoinType.BLOCKNESTED;
             node.setJoinType(joinMeth);
         }
         return root;
