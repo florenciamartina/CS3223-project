@@ -15,6 +15,8 @@ public class Operator {
         this.optype = type;
     }
 
+    public Operator getBase() { return this; }
+
     public Schema getSchema() {
         return schema;
     }

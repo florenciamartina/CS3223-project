@@ -77,11 +77,13 @@ public class PlanCost {
         } else if (node.getOpType() == OpType.SCAN) {
             return getStatistics((Scan) node);
         } else if (node.getOpType() == OpType.GROUPBY) {
-            return 1;
-        } else if (node.getOpType() == OpType.ORDERBY) {
-            return 1;
+            return getSortStatistics((GroupBy) node);
+        } else if (node.getOpType() == OpType.EXTERNALSORT) {
+            return getSortStatistics((Sort) node);
         } else if (node.getOpType() == OpType.DISTINCT) {
-            return 1;
+            return getStatistics((Distinct) node);
+        } else if (node.getOpType() == OpType.ORDERBY) {
+            return getStatistics((OrderBy) node);
         }
 
         System.out.println("operator is not supported");
@@ -95,6 +97,16 @@ public class PlanCost {
      **/
     protected long getStatistics(Project node) {
         return calculateCost(node.getBase());
+    }
+
+    protected long getStatistics(Distinct node) {
+        long sortCost = getSortStatistics(node);
+        return sortCost;
+    }
+
+    protected long getStatistics(OrderBy node) {
+        long sortCost = getSortStatistics(node);
+        return sortCost;
     }
 
     /**
@@ -152,9 +164,11 @@ public class PlanCost {
                 break;
             case JoinType.BLOCKNESTED: //TODO: Error in calculation?
                 joincost = leftpages + (long) Math.ceil(1.0 * leftpages / (numbuff - 2)) * rightpages;
+//                joincost = 1;
                 break;
             case JoinType.SORTMERGE:
-                joincost = 1; //TODO: Always choose sort merge, temporary
+//                joincost = 1; //TODO: Always choose sort merge, temporary
+                joincost = 2 * leftpages * (long) (1 + Math.ceil( Math.log( Math.ceil(1.0 * leftpages / numbuff))));
                 break;
             default:
                 System.out.println("join type is not supported");
@@ -166,11 +180,30 @@ public class PlanCost {
         return outtuples;
     }
 
-    /**
-     * Find number of incoming tuples, Using the selectivity find # of output tuples
-     * * And statistics about the attributes
-     * * Selection is performed on the fly, so no cost involved
-     **/
+    protected long getSortStatistics(Operator node) {
+        long inTuples = calculateCost(node.getBase());
+        long inCapacity = (long) Math.floor(1.0 * Batch.getPageSize() / node.getSchema().getTupleSize());
+        long numInPages = (long) Math.ceil(1.0 * inTuples / inCapacity);
+
+        int numOfBuff = BufferManager.getNumberOfBuffer();
+        cost += getExternalSortCost(numOfBuff, numInPages);
+
+        return cost;
+    }
+
+    private long getExternalSortCost(int numOfBuffers, long numOfPages) {
+        int numOfSortedRuns = (int) Math.ceil(1.0 * numOfPages/numOfBuffers);
+        int numOfPasses = 1 + (int) Math.ceil(Math.log(numOfSortedRuns)/Math.log(numOfBuffers - 1));
+        long cost = 2 * numOfPages * numOfPasses;
+        return cost;
+    }
+
+
+        /**
+         * Find number of incoming tuples, Using the selectivity find # of output tuples
+         * * And statistics about the attributes
+         * * Selection is performed on the fly, so no cost involved
+         **/
     protected long getStatistics(Select node) {
         long intuples = calculateCost(node.getBase());
         if (!isFeasible) {
@@ -242,7 +275,7 @@ public class PlanCost {
         }
         StringTokenizer tokenizer = new StringTokenizer(line);
         if (tokenizer.countTokens() != 1) {
-            System.out.println("incorrect format of statistics file " + filename);
+            System.out.println("incorrect format of statastics file " + filename);
             System.exit(1);
         }
         String temp = tokenizer.nextToken();
@@ -255,7 +288,7 @@ public class PlanCost {
         }
         tokenizer = new StringTokenizer(line);
         if (tokenizer.countTokens() != numAttr) {
-            System.out.println("incorrect format of statistics file " + filename);
+            System.out.println("incorrect format of statastics file " + filename);
             System.exit(1);
         }
         for (int i = 0; i < numAttr; ++i) {

@@ -101,15 +101,15 @@ public class Distinct extends Operator {
                 return outbatch;
             }
 
-//            for (int i = 0; i < inbatch.size(); i++) {
-//                Tuple currTuple = inbatch.get(i);
-//
+            for (int i = 0; i < inbatch.size(); i++) {
+                Tuple currTuple = inbatch.get(i);
+
 //                if (prevTuple == null || isDistinct(currTuple, prevTuple)) {
-//                    outbatch.add(currTuple);
+                    outbatch.add(currTuple);
 //                    prevTuple = currTuple;
-//                    System.out.println("curr Tuple:" + currTuple.toString());
+                    System.out.println("curr Tuple:" + currTuple.toString());
 //                }
-//            }
+            }
 
             inbatch = sortBase.next();
 
