@@ -18,6 +18,7 @@ public class Sort extends Operator {
     ArrayList<Attribute> attributes;
     TupleReader tupleReader;
     TupleWriter tupleWriter;
+    int maxTuples = 0;
 
     /**
      * The following fields are required during
@@ -65,6 +66,8 @@ public class Sort extends Operator {
         // Select the number of tuples per batch
         int tupleSize = schema.getTupleSize();
         batchSize = Batch.getPageSize() / tupleSize;
+        System.out.println("Batchsize " + batchSize);
+        System.out.println("Tuple size " + tupleSize);
 
         if (batchSize <= 0) {
             System.err.println("Page size must be larger than Tuple size in join operation");
@@ -89,6 +92,8 @@ public class Sort extends Operator {
         // Read final sorted run
         numOfPasses++;
         String filename = String.format("SortTemp-P%d-SR0", numOfPasses == 1 ? 0 : numOfPasses);
+        System.out.println("#SortedRuns : " + numSortedRuns);
+        System.out.println("Reader size " + (batchSize * numSortedRuns));
         tupleReader = new TupleReader(filename, batchSize * numSortedRuns);
         tupleReader.open();
         sorted = new ArrayList<>();
@@ -98,6 +103,8 @@ public class Sort extends Operator {
         tupleReader.close();
 
         if (sorted.size() != totalSize) {
+            System.out.println("Sorted size " + sorted.size());
+            System.out.println("Total size " + totalSize);
             System.err.println("Error in performing Sort operation");
             System.err.println("Num of read tuples != Num of generated tuples");
             return false;
@@ -123,9 +130,12 @@ public class Sort extends Operator {
         outBatch = new Batch(batchSize);
 
         while (!outBatch.isFull() && !sorted.isEmpty()) {
+//        while (!outBatch.isFull() && tupleReader.isEOF()) {
             outBatch.add(sorted.get(0));
             sorted.remove(0);
         }
+
+        //TODO : if outBatch.isFull && !sorted.isEmpty
 
         if (sorted.isEmpty()) {
             eos = true;
@@ -167,15 +177,18 @@ public class Sort extends Operator {
             }
 
             // Write sorted runs
-            tupleWriter = new TupleWriter(filename, batchSize);
+
+            maxTuples = tuples.size() > maxTuples ? tuples.size() : maxTuples;
+            tupleWriter = new TupleWriter(filename, tuples.size());
             tupleWriter.open();
             for (Tuple t : tuples) {
                 tupleWriter.next(t);
-                totalSize++;
+//                totalSize++;
             }
             tupleWriter.close();
 
             numSortedRuns++;
+            tuples = new ArrayList<>();
         }
 
         return numSortedRuns;
