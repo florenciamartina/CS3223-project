@@ -68,8 +68,6 @@ public class Distinct extends Operator {
             this.attributeIndexes.add(idx);
         }
 
-        System.out.println(attributes.toString());
-
         sortBase = new Sort(base, numOfBuffer, attributes, true, true);
         return sortBase.open();
     }
@@ -107,7 +105,6 @@ public class Distinct extends Operator {
 //                if (prevTuple == null || isDistinct(currTuple, prevTuple)) {
                     outbatch.add(currTuple);
 //                    prevTuple = currTuple;
-                    System.out.println("curr Tuple:" + currTuple.toString());
 //                }
             }
 
