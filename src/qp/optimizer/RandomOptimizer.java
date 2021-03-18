@@ -233,7 +233,6 @@ public class RandomOptimizer {
             int joinMeth = JoinType.BLOCKNESTED;
 //            while (joinMeth == prevJoinMeth) {
 ////                joinMeth = RandNumb.randInt(0, numJMeth - 1);
-//                joinMeth = JoinType.BLOCKNESTED;
 //            }
             node.setJoinType(joinMeth);
         }
