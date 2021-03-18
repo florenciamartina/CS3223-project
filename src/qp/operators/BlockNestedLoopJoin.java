@@ -118,7 +118,6 @@ public class BlockNestedLoopJoin extends Join {
                 for (int b = 0; b < getNumBuff() - 2; b++) {
                     Batch leftBatch = left.next();
                     if (leftBatch == null) break;
-
                     leftBlock.add(leftBatch);
                 }
 
@@ -160,16 +159,16 @@ public class BlockNestedLoopJoin extends Join {
                                         boolean isEndLeftBatch = j == leftBatch.size() - 1;
                                         boolean isEndRightBatch = k == rightBatch.size() - 1;
 
-                                        rightCurs = isEndRightBatch ? 0 : k + 1;
+                                        leftBlockCurs = isEndLeftBlock && isEndLeftBatch && isEndRightBatch
+                                                ? 0 : !isEndLeftBlock && isEndLeftBatch && isEndRightBatch
+                                                ? i + 1 : i;
 
                                         leftCurs = isEndLeftBatch && isEndRightBatch
                                                 ? 0
                                                 : !isEndLeftBatch && isEndRightBatch
-                                                    ? j + 1 : j;
+                                                ? j + 1 : j;
 
-                                        leftBlockCurs = isEndLeftBlock && isEndLeftBatch && isEndRightBatch
-                                                ? 0 : !isEndLeftBlock && isEndLeftBatch && isEndRightBatch
-                                                    ? i + 1 : i;
+                                        rightCurs = isEndRightBatch ? 0 : k + 1;
 
                                         return outBatch;
                                     }
