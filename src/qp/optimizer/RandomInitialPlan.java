@@ -12,6 +12,8 @@ import java.io.ObjectInputStream;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashMap;
+import java.util.*;
+
 
 public class RandomInitialPlan {
 
@@ -243,14 +245,28 @@ public class RandomInitialPlan {
         //Create adjacency list
         HashMap<String, ArrayList<Condition>> tableToConditionsMap = new HashMap<>();
         for (Condition cn: joinlist) {
+
+            Condition storedCondition = cn;
             String lefttab = cn.getLhs().getTabName();
             String righttab = ((Attribute) cn.getRhs()).getTabName();
+
+
+
+            if (lefttab.compareTo(righttab) > 0) {
+                storedCondition = cn.getFlippedCondition();
+                //Flip the table also
+                String temp = lefttab;
+                lefttab =  righttab;
+                righttab = temp;
+            }
+
+
             String key = lefttab + "-" + righttab;
             if (!tableToConditionsMap.containsKey(key)) {
                 tableToConditionsMap.put(key, new ArrayList<Condition>());
             }
             ArrayList<Condition> value = tableToConditionsMap.get(key);
-            value.add(cn);
+            value.add(storedCondition);
         }
 
         //Unique identifier for joins but not stored globally

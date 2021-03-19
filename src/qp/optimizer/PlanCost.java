@@ -136,16 +136,11 @@ public class PlanCost {
         for (Condition con : node.getConditionList()) {
             Attribute leftjoinAttr = con.getLhs();
             Attribute rightjoinAttr = (Attribute) con.getRhs();
-            int leftattrind = leftschema.indexOf(leftjoinAttr);
-            int rightattrind = rightschema.indexOf(rightjoinAttr);
+            int leftattrIndex = leftschema.indexOf(leftjoinAttr);
+            int rightattrIndex = rightschema.indexOf(rightjoinAttr);
 
-            //debug
-            System.out.println(leftschema.getAttList());
-            System.out.println(rightschema.getAttList());
-            //debyg
-
-            leftjoinAttr = leftschema.getAttribute(leftattrind);//TODO: Exception thrown
-            rightjoinAttr = rightschema.getAttribute(rightattrind);
+            leftjoinAttr = leftschema.getAttribute(leftattrIndex);//TODO: Exception thrown
+            rightjoinAttr = rightschema.getAttribute(rightattrIndex);
 
             /** Number of distinct values of left and right join attribute **/
             long leftattrdistn = hashTable.get(leftjoinAttr);
