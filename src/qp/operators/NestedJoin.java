@@ -11,6 +11,7 @@ import qp.utils.Tuple;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.UUID;
 
 public class NestedJoin extends Join {
 
@@ -28,6 +29,8 @@ public class NestedJoin extends Join {
     int rcurs;                      // Cursor for right side buffer
     boolean eosl;                   // Whether end of stream (left table) is reached
     boolean eosr;                   // Whether end of stream (right table) is reached
+
+    String uuid = UUID.randomUUID().toString(); // To avoid conflicts between Sort operations
 
     public NestedJoin(Join jn) {
         super(jn.getLeft(), jn.getRight(), jn.getConditionList(), jn.getOpType());
@@ -77,7 +80,7 @@ public class NestedJoin extends Join {
              ** into a file
              **/
             filenum++;
-            rfname = "NJtemp-" + String.valueOf(filenum);
+            rfname = String.format("NJtemp-%s-%d", uuid, filenum);
             try {
                 ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(rfname));
                 while ((rightpage = right.next()) != null) {
