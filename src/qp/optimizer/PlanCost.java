@@ -33,11 +33,11 @@ public class PlanCost {
      * Hashtable stores mapping from Attribute name to
      * * number of distinct values of that attribute
      **/
-    HashMap<Attribute, Long> ht;
+    HashMap<Attribute, Long> hashTable;
 
 
     public PlanCost() {
-        ht = new HashMap<>();
+        hashTable = new HashMap<>();
         cost = 0;
     }
 
@@ -136,18 +136,19 @@ public class PlanCost {
         for (Condition con : node.getConditionList()) {
             Attribute leftjoinAttr = con.getLhs();
             Attribute rightjoinAttr = (Attribute) con.getRhs();
-            int leftattrind = leftschema.indexOf(leftjoinAttr);
-            int rightattrind = rightschema.indexOf(rightjoinAttr);
-            leftjoinAttr = leftschema.getAttribute(leftattrind);
-            rightjoinAttr = rightschema.getAttribute(rightattrind);
+            int leftattrIndex = leftschema.indexOf(leftjoinAttr);
+            int rightattrIndex = rightschema.indexOf(rightjoinAttr);
+
+            leftjoinAttr = leftschema.getAttribute(leftattrIndex);//TODO: Exception thrown
+            rightjoinAttr = rightschema.getAttribute(rightattrIndex);
 
             /** Number of distinct values of left and right join attribute **/
-            long leftattrdistn = ht.get(leftjoinAttr);
-            long rightattrdistn = ht.get(rightjoinAttr);
+            long leftattrdistn = hashTable.get(leftjoinAttr);
+            long rightattrdistn = hashTable.get(rightjoinAttr);
             tuples /= (double) Math.max(leftattrdistn, rightattrdistn);
             long mindistinct = Math.min(leftattrdistn, rightattrdistn);
-            ht.put(leftjoinAttr, mindistinct);
-            ht.put(rightjoinAttr, mindistinct);
+            hashTable.put(leftjoinAttr, mindistinct);
+            hashTable.put(rightjoinAttr, mindistinct);
         }
         long outtuples = (long) Math.ceil(tuples);
 
@@ -219,7 +220,7 @@ public class PlanCost {
 
         /** Get number of distinct values of selection attributes **/
         long numdistinct = intuples;
-        Long temp = ht.get(fullattr);
+        Long temp = hashTable.get(fullattr);
         numdistinct = temp.longValue();
 
         long outtuples;
@@ -238,9 +239,9 @@ public class PlanCost {
          **/
         for (int i = 0; i < schema.getNumCols(); ++i) {
             Attribute attri = schema.getAttribute(i);
-            long oldvalue = ht.get(attri);
+            long oldvalue = hashTable.get(attri);
             long newvalue = (long) Math.ceil(((double) outtuples / (double) intuples) * oldvalue);
-            ht.put(attri, outtuples);
+            hashTable.put(attri, outtuples);
         }
         return outtuples;
     }
@@ -294,7 +295,7 @@ public class PlanCost {
             Attribute attr = schema.getAttribute(i);
             temp = tokenizer.nextToken();
             Long distinctValues = Long.valueOf(temp);
-            ht.put(attr, distinctValues);
+            hashTable.put(attr, distinctValues);
         }
 
         /** Number of tuples per page**/
