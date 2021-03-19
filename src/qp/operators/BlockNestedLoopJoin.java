@@ -11,6 +11,7 @@ import qp.utils.Tuple;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.UUID;
 
 public class BlockNestedLoopJoin extends Join {
     static int fileNum = 0;         // To get unique fileNum for this operation
@@ -23,13 +24,15 @@ public class BlockNestedLoopJoin extends Join {
     Batch rightBatch;               // Buffer page for right input stream
     ObjectInputStream in;           // File pointer to the right hand materialized file
 
-    int leftBlockCurs;                   // Cursor for left side block
+    int leftBlockCurs;              // Cursor for left side block
     int rightCurs;                  // Cursor for right side buffer
-    int leftCurs;              // Cursor for left side buffer page
+    int leftCurs;                   // Cursor for left side buffer page
     boolean eosLeft;                // Whether end of stream (left table) is reached
     boolean eosRight;               // Whether end of stream (right table) is reached
 
-    int numOfTuplesWrite = 0; // debug
+    String uuid = UUID.randomUUID().toString(); // To avoid conflicts between Sort operations
+
+    int numOfTuplesWrite = 0;       // debug
 
     public BlockNestedLoopJoin(Join jn) {
         super(jn.getLeft(), jn.getRight(), jn.getConditionList(), jn.getOpType());
@@ -81,7 +84,7 @@ public class BlockNestedLoopJoin extends Join {
          ** into a file
          **/
         fileNum++;
-        rfName = "BNLJtemp-" + String.valueOf(fileNum);
+        rfName = String.format("BNLJtemp-%s-%d", uuid, fileNum);
         try {
             ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(rfName));
             while ((rightPage = right.next()) != null) {

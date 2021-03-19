@@ -324,6 +324,11 @@ public class Sort extends Operator {
         // Close streams
         tupleReader.close();
         tupleWriter.close();
+
+        // Remove temp files
+        File f = new File(sortedFileName);
+        f.delete();
+
         return true;
     }
 
