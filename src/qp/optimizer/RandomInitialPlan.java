@@ -133,8 +133,8 @@ public class RandomInitialPlan {
     public void createScanOp() {
         int numtab = fromlist.size();
         Scan tempop = null;
-        for (int i = 0; i < numtab; ++i) {  // For each table in from list
-            String tabname = fromlist.get(i);
+
+        for (String tabname : fromlist) {
             Scan op1 = new Scan(tabname, OpType.SCAN);
             tempop = op1;
 
@@ -173,8 +173,7 @@ public class RandomInitialPlan {
      **/
     public void createSelectOp() {
         Select op1 = null;
-        for (int j = 0; j < selectionlist.size(); ++j) {
-            Condition cn = selectionlist.get(j);
+        for (Condition cn : selectionlist) {
             if (cn.getOpType() == Condition.SELECT) {
                 String tabname = cn.getLhs().getTabName();
                 Operator tempop = (Operator) tab_op_hash.get(tabname);
@@ -251,7 +250,7 @@ public class RandomInitialPlan {
     public void createProjectOp() {
         Operator base = root;
         if (projectlist == null)
-            projectlist = new ArrayList<Attribute>();
+            projectlist = new ArrayList<>();
         if (!projectlist.isEmpty()) {
             root = new Project(base, projectlist, OpType.PROJECT);
             Schema newSchema = base.getSchema().subSchema(projectlist);

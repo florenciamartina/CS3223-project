@@ -138,6 +138,12 @@ public class PlanCost {
             Attribute rightjoinAttr = (Attribute) con.getRhs();
             int leftattrind = leftschema.indexOf(leftjoinAttr);
             int rightattrind = rightschema.indexOf(rightjoinAttr);
+
+            if (leftattrind == -1 || rightattrind == -1) {
+                leftattrind = leftschema.indexOf(rightjoinAttr);
+                rightattrind = rightschema.indexOf(leftjoinAttr);
+            }
+
             leftjoinAttr = leftschema.getAttribute(leftattrind);
             rightjoinAttr = rightschema.getAttribute(rightattrind);
 
