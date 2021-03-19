@@ -45,6 +45,7 @@ public class Sort extends Operator {
     // Merging
     int numSortedRuns;
     int maxTuplesInSR = 0;
+    Tuple prevTuple;
 
     /**
      * constructor
@@ -112,8 +113,12 @@ public class Sort extends Operator {
 
         // Read from final sorted file
         while (!outBatch.isFull() && !tupleReader.isEOF()) {
-            outBatch.add(tupleReader.next());
-            totalOutputSize++;
+            Tuple currTuple = tupleReader.next();
+            if (!isDistinct || (numOfPasses == 0 && isDistinct(prevTuple, currTuple))) {
+                outBatch.add(currTuple);
+                totalOutputSize++;
+            }
+            prevTuple = currTuple;
         }
 
         if (tupleReader.isEOF()) {
@@ -242,7 +247,6 @@ public class Sort extends Operator {
 
         int tuplesInSR = 0;
 
-        Tuple prevTuple = null;
         while (!inputBuffers.stream().allMatch(Batch::isEmpty)) {
             Tuple selectedTuple = getSelectedTuple(inputBuffers, tupleReaders);
 
@@ -364,6 +368,10 @@ public class Sort extends Operator {
      * To check whether the current tuple is already present
      **/
     private boolean isDistinct(Tuple tuple1, Tuple tuple2) {
+
+        if (tuple1 == null || tuple2 == null) {
+            return true;
+        }
 
         if (attributeIndexes.isEmpty()) {
             return !tuple1.equals(tuple2);
