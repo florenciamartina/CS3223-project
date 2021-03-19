@@ -10,6 +10,12 @@ import qp.utils.*;
 
 public class OrderBy extends Sort {
 
+    /**
+     * The constructor for OrderBy operator.
+     * @param numOfBuff The number of buffers available.
+     * @param attributeList The attributes to order by.
+     * @param isAsc Set to true if is in ascending order, false if descending.
+     */
     public OrderBy(Operator base, int numOfBuff, ArrayList<Attribute> attributeList, boolean isAsc) {
         super(base, numOfBuff, attributeList, isAsc, false);
         this.optype = OpType.ORDERBY;
@@ -19,8 +25,8 @@ public class OrderBy extends Sort {
         Operator newbase = (Operator) base.clone();
         int numOfBuff = BufferManager.getBuffersPerJoin();
         ArrayList<Attribute> newattr = new ArrayList<>();
-        for (int i = 0; i < attributes.size(); ++i) {
-            newattr.add((Attribute) attributes.get(i).clone());
+        for (Attribute attribute : attributes) {
+            newattr.add((Attribute) attribute.clone());
         }
         OrderBy newOrderBy = new OrderBy(newbase, numOfBuff, newattr, isAsc);
         newOrderBy.setSchema((Schema) newbase.getSchema().clone());

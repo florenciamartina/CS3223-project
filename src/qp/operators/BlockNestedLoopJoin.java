@@ -32,8 +32,12 @@ public class BlockNestedLoopJoin extends Join {
 
     String uuid = UUID.randomUUID().toString(); // To avoid conflicts between Sort operations
 
-    int numOfTuplesWrite = 0;       // debug
+    // Debug
+    int numOfTuplesWrite = 0;       // The number of tuples outputted
 
+    /**
+     * Constructor for Block Nested Loop Join operator
+     */
     public BlockNestedLoopJoin(Join jn) {
         super(jn.getLeft(), jn.getRight(), jn.getConditionList(), jn.getOpType());
         schema = jn.getSchema();
@@ -110,7 +114,6 @@ public class BlockNestedLoopJoin extends Join {
         int i, j, k;
 
         if (eosLeft) {
-            System.out.println("#Tuples: " + numOfTuplesWrite);
             close();
             return null;
         }

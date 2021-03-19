@@ -20,13 +20,17 @@ public class Distinct extends Operator {
     Batch inbatch;   // This is the current input buffer
     Batch outbatch;  // This is the current output buffer
     int start;       // Cursor position in the input buffer
+
     Sort sortBase;
 
     /**
-     * constructor
-     **/
-    public Distinct(Operator base, int type, int numOfBuffer, ArrayList<Attribute> attributes, String tabname) {
-        super(type);
+     * Constructor for Distinct operator.
+     * @param numOfBuffer The number of buffers available.
+     * @param attributes The distinct attributes.
+     * @param tabname The table name.
+     */
+    public Distinct(Operator base, int numOfBuffer, ArrayList<Attribute> attributes, String tabname) {
+        super(OpType.DISTINCT);
         this.base = base;
         this.numOfBuffer = numOfBuffer;
         this.attributes = attributes;
@@ -35,13 +39,11 @@ public class Distinct extends Operator {
 
     }
 
-    public Distinct(Operator base, int type, int numOfBuffer, String tabname) {
-        super(type);
-        this.base = base;
-        this.numOfBuffer = numOfBuffer;
-        this.attributes = new ArrayList<>();
-        this.attributeIndexes = new ArrayList<>();
-        this.tabname = tabname;
+    /**
+     * Constructor for Distinct operator with no distinct attributes
+     */
+    public Distinct(Operator base, int numOfBuffer, String tabname) {
+        this(base, numOfBuffer, new ArrayList<>(), tabname);
     }
 
     public Operator getBase() {
@@ -63,8 +65,8 @@ public class Distinct extends Operator {
         int tuplesize = schema.getTupleSize();
         batchsize = Batch.getPageSize() / tuplesize;
 
-        for (int i = 0; i < attributes.size(); i++) {
-            Integer idx = schema.indexOf(this.attributes.get(i));
+        for (Attribute attribute : attributes) {
+            Integer idx = schema.indexOf(attribute);
             this.attributeIndexes.add(idx);
         }
 
@@ -99,13 +101,8 @@ public class Distinct extends Operator {
                 return outbatch;
             }
 
-            for (int i = 0; i < inbatch.size(); i++) {
-                Tuple currTuple = inbatch.get(i);
-
-//                if (prevTuple == null || isDistinct(currTuple, prevTuple)) {
-                    outbatch.add(currTuple);
-//                    prevTuple = currTuple;
-//                }
+            for (Tuple t: inbatch.getTuples()) {
+                outbatch.add(t);
             }
 
             inbatch = sortBase.next();
@@ -127,10 +124,8 @@ public class Distinct extends Operator {
         ArrayList<Attribute> newattr = new ArrayList<>();
         for (int i = 0; i < attributes.size(); i++)
             newattr.add((Attribute) attributes.get(i).clone());
-        Distinct newDistinct = new Distinct(newbase, optype, numOfBuffer, newattr, tabname);
+        Distinct newDistinct = new Distinct(newbase, numOfBuffer, newattr, tabname);
         newDistinct.setSchema((Schema) newbase.getSchema().clone());
         return newDistinct;
     }
-
-//
 }

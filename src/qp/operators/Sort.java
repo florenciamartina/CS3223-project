@@ -13,18 +13,17 @@ import qp.utils.*;
 
 public class Sort extends Operator {
 
-    int batchSize;  // Number of tuples per outbatch
+    int batchSize;                          // Number of tuples per outbatch
     Operator base;
-    ArrayList<Attribute> attributes;
-    ArrayList<Integer> attributeIndexes;
+    ArrayList<Attribute> attributes;        // Attributes used to determine the sorting
+    ArrayList<Integer> attributeIndexes;    // The indexes of the attribute in the table sorted
 
     // Input and output
-    String sortedFileName;
-    TupleReader tupleReader;
-    TupleWriter tupleWriter;
+    String sortedFileName;                  // The final sorted run filename
+    TupleReader tupleReader;                // Used to read the temporary files
+    TupleWriter tupleWriter;                // Used to write temporary files
 
-    // To avoid conflicts between Sort operations
-    String uuid = UUID.randomUUID().toString();
+    String uuid = UUID.randomUUID().toString(); // To avoid conflicts between Sort operations
 
     /**
      * The following fields are required during
@@ -37,19 +36,25 @@ public class Sort extends Operator {
     boolean isAsc;
     boolean isDistinct;
 
-    int numOfBuff;
+    int numOfBuff;              // The number of buffers available
     int numOfPasses = 0;
-    int totalInputSize = 0;          // debugging purposes
-    int totalOutputSize = 0;         // debugging purposes
+
+    // Debuggig
+    int totalInputSize = 0;     // The number of tuples read
+    int totalOutputSize = 0;    // The number of tuples outputted
 
     // Merging
     int numSortedRuns;
-    int maxTuplesInSR = 0;
-    Tuple prevTuple;
+    int maxTuplesInSR = 0;      // The maximum number of tuples in a sorted run
+    Tuple prevTuple;            // Used for comparison when isDistinct is set to true
 
     /**
-     * constructor
-     **/
+     * Constructor for sort
+     * @param numOfBuff The number of buffers available.
+     * @param attributeList The attributes used to determine the sorting.
+     * @param isAsc Set to true if sorting is ascending, false if descending.
+     * @param isDistinct Set to true to remove duplicate values (based on the given attributes).
+     */
     public Sort(Operator base, int numOfBuff, ArrayList<Attribute> attributeList, boolean isAsc, boolean isDistinct) {
         super(OpType.SORT);
         this.base = base;
@@ -60,10 +65,16 @@ public class Sort extends Operator {
         this.isDistinct = isDistinct;
     }
 
+    /**
+     * Constructor for default Sort, ascending and not distinct.
+     **/
     public Sort(Operator base, int numOfBuff, ArrayList<Attribute> attributeList) {
         this(base, numOfBuff, attributeList, true, false);
     }
 
+    /**
+     * Opens the connection to the base operator
+     **/
     public boolean open() {
         // Base is to be materialized for Sort to perform
         if (!base.open()) {
@@ -99,6 +110,9 @@ public class Sort extends Operator {
         return true;
     }
 
+    /**
+     * returns a batch of sorted tuples.
+     **/
     public Batch next() {
 
         // Close when end of stream
@@ -129,6 +143,9 @@ public class Sort extends Operator {
         return outBatch;
     }
 
+    /**
+     * Write sorted runs into files for merging.
+     */
     private void generateSortedRuns() {
 
         numSortedRuns = 0;
@@ -173,6 +190,9 @@ public class Sort extends Operator {
         }
     }
 
+    /**
+     * Merge all sorted runs.
+     */
     private void mergeSortedRuns() {
 
         int numOfInputBuffers = numOfBuff - 1;
@@ -213,6 +233,10 @@ public class Sort extends Operator {
         tupleReader.open();
     }
 
+    /**
+     * Merge (B - 1) sorted runs where B is the number of available buffers.
+     * @param fileInputs The sorted run files which are read.
+     */
     private void mergeRuns(ArrayList<String> fileInputs) {
 
         // Setup input buffers and readers
@@ -237,6 +261,11 @@ public class Sort extends Operator {
 
     }
 
+    /**
+     * Merge the tuples in the (B - 1) buffers
+     * @param inputBuffers The buffers used in merging.
+     * @param tupleReaders The tuple readers used to read the sorted run files.
+     */
     private void mergeTuples(ArrayList<Batch> inputBuffers, ArrayList<TupleReader> tupleReaders) {
 
         String fileOutput = getFileName(numOfPasses + 1, numSortedRuns);
@@ -274,6 +303,15 @@ public class Sort extends Operator {
         maxTuplesInSR = Math.max(tuplesInSR, maxTuplesInSR);
     }
 
+    /**
+     * Get the selected tuple based on the sorting attribute
+     * and immediately refills the selected buffer.
+     * Obtains the minimum tuple when Sort is set to ascending,
+     * or the maximum tuple when Sort is descending.
+     * @param inputBuffers The buffers used when merging
+     * @param tupleReaders The tuple readers used to read the sorted run files.
+     * @return
+     */
     private Tuple getSelectedTuple(ArrayList<Batch> inputBuffers, ArrayList<TupleReader> tupleReaders) {
 
         Tuple selectedTuple = null;
@@ -320,10 +358,19 @@ public class Sort extends Operator {
         return selectedTuple;
     }
 
+    /**
+     * Returns the temporary sort file name.
+     * @param numOfPasses The number of passes when the sorted run was created.
+     * @param sortedRunIndex The index of the sorted run.
+     * @return The filename of the sorted run.
+     */
     private String getFileName(int numOfPasses, int sortedRunIndex) {
         return String.format("SortTemp-%s-P%d-SR%d", uuid, numOfPasses, sortedRunIndex);
     }
 
+    /**
+     * Close the operator
+     */
     public boolean close() {
         // Close streams
         tupleReader.close();
@@ -394,7 +441,7 @@ public class Sort extends Operator {
 
     // Debugging
     private void printStatistics() {
-        System.out.println("Passes: " + numOfPasses);
+        System.out.printf("Passes: %d\n", numOfPasses + 1);
         System.out.printf("Input tuples: %d\n", totalInputSize);
         System.out.printf("Output tuples: %d\n", totalOutputSize);
     }

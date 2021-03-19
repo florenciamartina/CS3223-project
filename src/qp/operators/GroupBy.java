@@ -9,15 +9,13 @@ import qp.utils.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-
 public class GroupBy extends Sort {
 
-//
-//    public GroupBy(int type, Operator base, int numOfBuff, ArrayList<Attribute> attributeList, String tabname) {
-//        super(type, base, numOfBuff, attributeList, tabname);
-////        this.groupedTuples = new HashMap<>();
-//    }
-
+    /**
+     * Constructor for GroupBy operation.
+     * @param numOfBuff The number of buffers available.
+     * @param attributeList The attributes to group by.
+     */
     public GroupBy(Operator base, int numOfBuff, ArrayList<Attribute> attributeList) {
         super(base, numOfBuff, attributeList);
         this.optype = OpType.GROUPBY;
@@ -35,8 +33,8 @@ public class GroupBy extends Sort {
         Operator newbase = (Operator) base.clone();
         int numOfBuff = BufferManager.getBuffersPerJoin();
         ArrayList<Attribute> newattr = new ArrayList<>();
-        for (int i = 0; i < attributes.size(); ++i) {
-            newattr.add((Attribute) attributes.get(i).clone());
+        for (Attribute attribute : attributes) {
+            newattr.add((Attribute) attribute.clone());
         }
         GroupBy newGroupBy = new GroupBy(newbase, numOfBuff, newattr);
         newGroupBy.setSchema((Schema) newbase.getSchema().clone());
