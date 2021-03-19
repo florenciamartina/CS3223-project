@@ -139,6 +139,7 @@ public class PlanCost {
             int leftattrind = leftschema.indexOf(leftjoinAttr);
             int rightattrind = rightschema.indexOf(rightjoinAttr);
 
+            // If index not found switch attributes
             if (leftattrind == -1 || rightattrind == -1) {
                 leftattrind = leftschema.indexOf(rightjoinAttr);
                 rightattrind = rightschema.indexOf(leftjoinAttr);
@@ -167,8 +168,7 @@ public class PlanCost {
                 joincost = leftpages * rightpages;
                 break;
             case JoinType.BLOCKNESTED:
-//                joincost = leftpages + (long) Math.ceil(1.0 * leftpages / (numbuff - 2)) * rightpages;
-                joincost = 1;
+                joincost = leftpages + (long) Math.ceil(1.0 * leftpages / (numbuff - 2)) * rightpages;
                 break;
             case JoinType.SORTMERGE:
                 long sortLeftCost = 2 * leftpages * (long) (1 + Math.ceil( Math.log( Math.ceil(1.0 * leftpages / numbuff))));

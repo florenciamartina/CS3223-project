@@ -57,6 +57,7 @@ public class BlockNestedLoopJoin extends Join {
         for (Condition con : conditionList) {
             Attribute leftAttr = con.getLhs();
             Attribute rightAttr = (Attribute) con.getRhs();
+
             leftIndex.add(left.getSchema().indexOf(leftAttr));
             rightIndex.add(right.getSchema().indexOf(rightAttr));
         }

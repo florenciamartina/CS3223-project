@@ -13,7 +13,7 @@ import java.util.*;
 
 public class RandomInitialPlan {
 
-    public static class Key <T, V> {
+    public static class Key<T, V> {
         private final T key1;
         private final V key2;
 
@@ -30,8 +30,7 @@ public class RandomInitialPlan {
 
             if (o instanceof Key) {
                 Key<T, V> k = (Key<T, V>) o;
-                return (k.key1.equals(key1) && k.key2.equals(key2))
-                        || k.key2.equals(key1) && k.key1.equals(key2);
+                return k.key1.equals(key1) && k.key2.equals(key2);
             }
 
             return false;
@@ -72,17 +71,20 @@ public class RandomInitialPlan {
     private int calculateNumJoins() {
 
         HashMap<Key<String, String>, ArrayList<Condition>> joinConditions = new HashMap<>();
-        for (Condition c: joinlist) {
+        for (Condition c : joinlist) {
             String currLHS = c.getLhs().getTabName();
             String currRHS = ((Attribute) c.getRhs()).getTabName();
 
-            Key<String, String> key = new Key<>(currLHS, currRHS);
+            int compareResult = currLHS.compareToIgnoreCase(currRHS);
+
+            Key<String, String> key = compareResult <= 0
+                    ? new Key<>(currLHS, currRHS) : new Key<>(currRHS, currLHS);
 
             if (!joinConditions.containsKey(key)) {
                 joinConditions.put(key, new ArrayList<>());
             }
 
-            joinConditions.get(key).add(c);
+            joinConditions.get(key).add(compareResult <= 0 ? c : c.getFlippedCondition());
         }
 
         groupedJoinList = new ArrayList<>(joinConditions.values());
@@ -155,7 +157,7 @@ public class RandomInitialPlan {
             tab_op_hash.put(tabname, op1);
         }
 
-            // 12 July 2003 (whtok)
+        // 12 July 2003 (whtok)
         // To handle the case where there is no where clause
         // selectionlist is empty, hence we set the root to be
         // the scan operator. the projectOp would be put on top of
