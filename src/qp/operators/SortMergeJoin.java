@@ -25,20 +25,20 @@ import java.util.Stack;
 
 public class SortMergeJoin extends Join {
 
-    private Sort leftSort;
-    private Sort rightSort;
+	private Sort leftSort;
+	private Sort rightSort;
 
     private int batchNum;
 
     private ArrayList<Integer> leftindex;   // Indices of the join attributes in left table
     private ArrayList<Integer> rightindex;  // Indices of the join attributes in right table
 
-    private ArrayList<Attribute> leftAttributeIndex;   //To support join
-    private ArrayList<Attribute> rightAttributeIndex;  //To support join
+	private ArrayList<Attribute> leftAttributeIndex;   //To support join
+	private ArrayList<Attribute> rightAttributeIndex;  //To support join
 
 
-    public SortMergeJoin(Join join) {
-        super(join.getLeft(), join.getRight(), join.getConditionList(), join.getOpType());
+	public SortMergeJoin(Join join) {
+    	super(join.getLeft(), join.getRight(), join.getConditionList(), join.getOpType());
         schema = join.getSchema();
         jointype = join.getJoinType();
         numBuff = join.getNumBuff();
@@ -66,16 +66,21 @@ public class SortMergeJoin extends Join {
         batchNum = Batch.getPageSize() / tupleSize;
 
 
+
         if (batchNum < 1) {
-            System.err.println("Page Size must be larger than TupleSize in join operation");
+            System.err.println(" Page Size must be larger than TupleSize in join operation");
             return false;
         }
 
         // Sort the 2 relations
-        leftSort = new Sort(left, numBuff, leftAttributeIndex);
-        rightSort = new Sort(right, numBuff, rightAttributeIndex);
+		leftSort = new Sort(left, numBuff, leftAttributeIndex);
+		rightSort = new Sort(right, numBuff, rightAttributeIndex);
 
-        return leftSort.open() && rightSort.open();
+        if (!(leftSort.open() && rightSort.open())) {
+            return false;
+        } else {
+        	return true;
+        }
     }
 
     /**
@@ -88,12 +93,12 @@ public class SortMergeJoin extends Join {
 //        System.err.println("Calling SortMergeJoin next() method");
 //        //debug
 
-        Batch joinBatch = findMatch();
-        if (!joinBatch.isEmpty()) {
-            return joinBatch;
-        } else {
-            return null;
-        }
+    	Batch joinBatch = findMatch();
+    	if (!joinBatch.isEmpty()) {
+    		return joinBatch;
+    	} else {
+    		return null;
+    	}
     }
 
     /**
@@ -101,11 +106,10 @@ public class SortMergeJoin extends Join {
      */
     @Override
     public boolean close() {
-        return leftSort.close() && rightSort.close();
+    	return leftSort.close() && rightSort.close();
     }
 
     //TODO: Stackoverflow just yolo [139 results]
-
     /**
      * from input buffers selects the tuples satisfying join condition
      **/
@@ -145,6 +149,8 @@ public class SortMergeJoin extends Join {
 
         Set<Tuple> leftSet = new HashSet<>();
         Set<Tuple> rightSet = new HashSet<>();
+
+
 
 
         //TODO: Assume one condition first
@@ -251,12 +257,12 @@ public class SortMergeJoin extends Join {
 
 
     private void join(Set<Tuple> leftSet, Set<Tuple> rightSet, Batch joinBatch) {
-        for (Tuple leftTuple : leftSet) {
-            for (Tuple rightTuple : rightSet) {
-                Tuple joinTuple = leftTuple.joinWith(rightTuple);
-                joinBatch.add(joinTuple);
-            }
-        }
+    	for (Tuple leftTuple : leftSet) {
+    		for (Tuple rightTuple : rightSet) {
+	        	Tuple joinTuple = leftTuple.joinWith(rightTuple);
+	            joinBatch.add(joinTuple);
+    		}
+    	}
     }
 
 
@@ -277,13 +283,14 @@ public class SortMergeJoin extends Join {
     }
 
 
+
     // Debugging
-    private void printTuple(Tuple t) {
+    private void printTuple(Tuple t)  {
         System.out.print("(");
         System.out.print(t.dataAt(0) + " ");
-        System.out.print(t.dataAt(1) + " ");
-        System.out.print(t.dataAt(2) + " ");
-        System.out.print(t.dataAt(3) + " ");
+        System.out.print(t.dataAt(1)+ " ");
+        System.out.print(t.dataAt(2)+ " ");
+        System.out.print(t.dataAt(3)+ " ");
 
 
         System.out.println(")");
@@ -316,6 +323,7 @@ public class SortMergeJoin extends Join {
         }
         return 0;
     }
+
 
 
 }
