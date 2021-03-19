@@ -24,6 +24,9 @@ public class RandomInitialPlan {
     ArrayList<Attribute> groupbylist;
     ArrayList<Attribute> orderbylist;
     int numJoin;            // Number of joins in this query
+
+    int numDistinctTableJoins;
+
     HashMap<String, Operator> tab_op_hash;  // Table name to the Operator
     Operator root;          // Root of the query plan tree
 
@@ -39,12 +42,17 @@ public class RandomInitialPlan {
         numJoin = joinlist.size();
     }
 
-    /**
-     * number of join conditions
-     **/
+//    /**
+//     * number of join conditions
+//     **/
+//    public int getNumJoins() {
+//        return numJoin;
+//    }
+
     public int getNumJoins() {
-        return numJoin;
+        return numDistinctTableJoins;
     }
+
 
     /**
      * prepare initial plan for the query
@@ -54,9 +62,19 @@ public class RandomInitialPlan {
         tab_op_hash = new HashMap<>();
         createScanOp();
         createSelectOp();
+
+        //debug
+        System.out.println("before creation");
+        System.out.println(tab_op_hash);
+        //debug
         if (numJoin != 0) {
             createJoinOp();
         }
+
+        //debug
+        System.out.println("After creation");
+        System.out.println(tab_op_hash);
+        //debug
 
         if (sqlquery.getGroupByList().size() > 0) {
 //            System.err.println("GroupBy is not implemented.");
@@ -158,26 +176,95 @@ public class RandomInitialPlan {
     /**
      * create join operators
      **/
-    public void createJoinOp() {
-        BitSet bitCList = new BitSet(numJoin);
-        int jnnum = RandNumb.randInt(0, numJoin - 1);
-        Join jn = null;
+//    public void createJoinOp() {
+//        BitSet bitCList = new BitSet(numJoin);
+//        int jnnum = RandNumb.randInt(0, numJoin - 1);
+//        Join jn = null;
+//
+//
+//        //debug
+//        System.out.println("Numjoin is: " + numJoin);
+//        //debug
+//
+//        /** Repeat until all the join conditions are considered **/
+//        while (bitCList.cardinality() != numJoin) {
+//            /** If this condition is already consider chose
+//             ** another join condition
+//             **/
+//            while (bitCList.get(jnnum)) {
+//                jnnum = RandNumb.randInt(0, numJoin - 1);
+//            }
+//            Condition cn = (Condition) joinlist.get(jnnum);
+//            String lefttab = cn.getLhs().getTabName();
+//            String righttab = ((Attribute) cn.getRhs()).getTabName();
+//            Operator left = (Operator) tab_op_hash.get(lefttab);
+//            Operator right = (Operator) tab_op_hash.get(righttab);
+//            jn = new Join(left, right, cn, OpType.JOIN);
+//            jn.setNodeIndex(jnnum);
+//            Schema newsche = left.getSchema().joinWith(right.getSchema());
+//            jn.setSchema(newsche);
+//
+//            //debug
+//            System.out.println("printing tabs");
+//            System.out.println(lefttab);
+//            System.out.println(righttab);
+//            //debug
+//
+//            /** randomly select a join type**/
+//            int numJMeth = JoinType.numJoinTypes();
+////            int joinMeth = RandNumb.randInt(0, numJMeth - 1); // default
+////            int joinMeth = JoinType.BLOCKNESTED; // set jointype = blockNested
+//            int joinMeth = JoinType.SORTMERGE;
+//            jn.setJoinType(joinMeth);
+//            modifyHashtable(left, jn);
+//            modifyHashtable(right, jn);
+//            bitCList.set(jnnum);
+//        }
+//
+//        /** The last join operation is the root for the
+//         ** constructed till now
+//         **/
+//        if (numJoin != 0)
+//            root = jn;
+//    }
 
-        /** Repeat until all the join conditions are considered **/
-        while (bitCList.cardinality() != numJoin) {
-            /** If this condition is already consider chose
-             ** another join condition
-             **/
-            while (bitCList.get(jnnum)) {
-                jnnum = RandNumb.randInt(0, numJoin - 1);
-            }
-            Condition cn = (Condition) joinlist.get(jnnum);
+    //TODO: Try at multi-conditions
+    public void createJoinOp() {
+
+//        BitSet bitCList = new BitSet(numJoin);
+//        int jnnum = RandNumb.randInt(0, numJoin - 1);
+//        Join jn = null;
+
+        Join jn = null;
+        //debug
+        System.out.println("Numjoin is: " + numJoin);
+        //debug
+
+        //Create adjacency list
+        HashMap<String, ArrayList<Condition>> tableToConditionsMap = new HashMap<>();
+        for (Condition cn: joinlist) {
             String lefttab = cn.getLhs().getTabName();
             String righttab = ((Attribute) cn.getRhs()).getTabName();
-            Operator left = (Operator) tab_op_hash.get(lefttab);
-            Operator right = (Operator) tab_op_hash.get(righttab);
-            jn = new Join(left, right, cn, OpType.JOIN);
-            jn.setNodeIndex(jnnum);
+            String key = lefttab + "-" + righttab;
+            if (!tableToConditionsMap.containsKey(key)) {
+                tableToConditionsMap.put(key, new ArrayList<Condition>());
+            }
+            ArrayList<Condition> value = tableToConditionsMap.get(key);
+            value.add(cn);
+        }
+
+        //Unique identifier for joins but not stored globally
+        int id = 0;
+        //Create the joins consisting of many conditions
+        for (String leftRightTable : tableToConditionsMap.keySet()) {
+            String[] arrOfStr = leftRightTable.split("-", 2);
+            String leftTable = arrOfStr[0];
+            String rightTable = arrOfStr[1];
+            Operator left = (Operator) tab_op_hash.get(leftTable);
+            Operator right = (Operator) tab_op_hash.get(rightTable);
+            ArrayList<Condition> conditions = tableToConditionsMap.get(leftRightTable);
+            jn = new Join(left, right, conditions, OpType.JOIN);
+            jn.setNodeIndex(id);
             Schema newsche = left.getSchema().joinWith(right.getSchema());
             jn.setSchema(newsche);
 
@@ -189,8 +276,8 @@ public class RandomInitialPlan {
             jn.setJoinType(joinMeth);
             modifyHashtable(left, jn);
             modifyHashtable(right, jn);
-            bitCList.set(jnnum);
         }
+
 
         /** The last join operation is the root for the
          ** constructed till now
@@ -198,6 +285,8 @@ public class RandomInitialPlan {
         if (numJoin != 0)
             root = jn;
     }
+
+
 
     public void createProjectOp() {
         Operator base = root;

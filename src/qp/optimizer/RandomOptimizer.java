@@ -27,7 +27,11 @@ public class RandomOptimizer {
     public static final int NUM_CHOICES = 3;
 
     SQLQuery sqlquery;  // Vector of Vectors of Select + From + Where + GroupBy
+
+    //TODO: This calls my modified numJoin
     int numJoin;        // Number of joins in this query plan
+//    int numDistinctTableJoins;
+
 
     /**
      * constructor
@@ -104,6 +108,9 @@ public class RandomOptimizer {
     protected Operator getNeighbor(Operator root) {
         // Randomly select a node to be altered to get the neighbour
         int nodeNum = RandNumb.randInt(0, numJoin - 1);
+
+        //TODO:
+//        int nodeNum = RandNumb.randInt(0, numDistinctTableJoins - 1);
         // Randomly select type of alteration: Change Method/Associative/Commutative
         int changeType = RandNumb.randInt(0, NUM_CHOICES - 1);
         Operator neighbor = null;
@@ -138,6 +145,8 @@ public class RandomOptimizer {
         } else {
             NUMITER = 1;
         }
+
+//        finalPlan = rip.prepareInitialPlan();
 
         /** Randomly restart the gradient descent until
          *  the maximum specified number of random restarts (NUMITER)
