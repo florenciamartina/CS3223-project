@@ -65,28 +65,15 @@ public class RandomInitialPlan {
         createScanOp();
         createSelectOp();
 
-        //debug
-        System.out.println("before creation");
-        System.out.println(tab_op_hash);
-        //debug
         if (numJoin != 0) {
             createJoinOp();
         }
 
-        //debug
-        System.out.println("After creation");
-        System.out.println(tab_op_hash);
-        //debug
-
         if (sqlquery.getGroupByList().size() > 0) {
-//            System.err.println("GroupBy is not implemented.");
-//            System.exit(1);
             createGroupByOp();
         }
 
         if (sqlquery.getOrderByList().size() > 0) {
-//            System.err.println("Orderby is not implemented.");
-//            System.exit(1);
             createOrderByOp();
         }
 
@@ -128,11 +115,6 @@ public class RandomInitialPlan {
             tab_op_hash.put(tabname, op1);
         }
 
-            // 12 July 2003 (whtok)
-        // To handle the case where there is no where clause
-        // selectionlist is empty, hence we set the root to be
-        // the scan operator. the projectOp would be put on top of
-        // this later in CreateProjectOp
         if (selectionlist.size() == 0) {
             root = tempop;
             return;
@@ -176,71 +158,11 @@ public class RandomInitialPlan {
     }
 
     /**
-     * create join operators
+     * create join operators that executes multiple join conditions relating to same pair of tuples
      **/
-//    public void createJoinOp() {
-//        BitSet bitCList = new BitSet(numJoin);
-//        int jnnum = RandNumb.randInt(0, numJoin - 1);
-//        Join jn = null;
-//
-//
-//        //debug
-//        System.out.println("Numjoin is: " + numJoin);
-//        //debug
-//
-//        /** Repeat until all the join conditions are considered **/
-//        while (bitCList.cardinality() != numJoin) {
-//            /** If this condition is already consider chose
-//             ** another join condition
-//             **/
-//            while (bitCList.get(jnnum)) {
-//                jnnum = RandNumb.randInt(0, numJoin - 1);
-//            }
-//            Condition cn = (Condition) joinlist.get(jnnum);
-//            String lefttab = cn.getLhs().getTabName();
-//            String righttab = ((Attribute) cn.getRhs()).getTabName();
-//            Operator left = (Operator) tab_op_hash.get(lefttab);
-//            Operator right = (Operator) tab_op_hash.get(righttab);
-//            jn = new Join(left, right, cn, OpType.JOIN);
-//            jn.setNodeIndex(jnnum);
-//            Schema newsche = left.getSchema().joinWith(right.getSchema());
-//            jn.setSchema(newsche);
-//
-//            //debug
-//            System.out.println("printing tabs");
-//            System.out.println(lefttab);
-//            System.out.println(righttab);
-//            //debug
-//
-//            /** randomly select a join type**/
-//            int numJMeth = JoinType.numJoinTypes();
-////            int joinMeth = RandNumb.randInt(0, numJMeth - 1); // default
-////            int joinMeth = JoinType.BLOCKNESTED; // set jointype = blockNested
-//            int joinMeth = JoinType.SORTMERGE;
-//            jn.setJoinType(joinMeth);
-//            modifyHashtable(left, jn);
-//            modifyHashtable(right, jn);
-//            bitCList.set(jnnum);
-//        }
-//
-//        /** The last join operation is the root for the
-//         ** constructed till now
-//         **/
-//        if (numJoin != 0)
-//            root = jn;
-//    }
-
-    //TODO: Try at multi-conditions
     public void createJoinOp() {
 
-//        BitSet bitCList = new BitSet(numJoin);
-//        int jnnum = RandNumb.randInt(0, numJoin - 1);
-//        Join jn = null;
-
         Join jn = null;
-        //debug
-        System.out.println("Numjoin is: " + numJoin);
-        //debug
 
         //Create adjacency list
         HashMap<String, ArrayList<Condition>> tableToConditionsMap = new HashMap<>();
@@ -250,16 +172,12 @@ public class RandomInitialPlan {
             String lefttab = cn.getLhs().getTabName();
             String righttab = ((Attribute) cn.getRhs()).getTabName();
 
-
-
             if (lefttab.compareTo(righttab) > 0) {
                 storedCondition = cn.getFlippedCondition();
-                //Flip the table also
                 String temp = lefttab;
                 lefttab =  righttab;
                 righttab = temp;
             }
-
 
             String key = lefttab + "-" + righttab;
             if (!tableToConditionsMap.containsKey(key)) {
@@ -269,7 +187,6 @@ public class RandomInitialPlan {
             value.add(storedCondition);
         }
 
-        //Unique identifier for joins but not stored globally
         int id = 0;
         //Create the joins consisting of many conditions
         for (String leftRightTable : tableToConditionsMap.keySet()) {
@@ -286,9 +203,7 @@ public class RandomInitialPlan {
 
             /** randomly select a join type**/
             int numJMeth = JoinType.numJoinTypes();
-//            int joinMeth = RandNumb.randInt(0, numJMeth - 1); // default
-            int joinMeth = JoinType.BLOCKNESTED; // set jointype = blockNested
-//            int joinMeth = JoinType.SORTMERGE;
+            int joinMeth = RandNumb.randInt(0, numJMeth - 1); // default
             jn.setJoinType(joinMeth);
             modifyHashtable(left, jn);
             modifyHashtable(right, jn);

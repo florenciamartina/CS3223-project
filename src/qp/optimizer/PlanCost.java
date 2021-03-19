@@ -139,7 +139,7 @@ public class PlanCost {
             int leftattrIndex = leftschema.indexOf(leftjoinAttr);
             int rightattrIndex = rightschema.indexOf(rightjoinAttr);
 
-            leftjoinAttr = leftschema.getAttribute(leftattrIndex);//TODO: Exception thrown
+            leftjoinAttr = leftschema.getAttribute(leftattrIndex);
             rightjoinAttr = rightschema.getAttribute(rightattrIndex);
 
             /** Number of distinct values of left and right join attribute **/
@@ -168,7 +168,8 @@ public class PlanCost {
                 long sortLeftCost = 2 * leftpages * (long) (1 + Math.ceil( Math.log( Math.ceil(1.0 * leftpages / numbuff))));
                 long sortRightCost = 2 * rightpages * (long) (1 + Math.ceil( Math.log( Math.ceil(1.0 * rightpages / numbuff))));
                 long mergeCost = leftpages + rightpages;
-                joincost = sortLeftCost + sortRightCost + mergeCost;
+//                joincost = sortLeftCost + sortRightCost + mergeCost;
+                joincost = 0;
                 break;
             default:
                 System.out.println("join type is not supported");
