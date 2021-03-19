@@ -6,6 +6,7 @@ package qp.operators;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.UUID;
 
 import qp.optimizer.BufferManager;
 import qp.utils.*;
@@ -14,10 +15,16 @@ public class Sort extends Operator {
 
     int batchSize;  // Number of tuples per outbatch
     Operator base;
-    ArrayList<Integer> attributeIndexes;
     ArrayList<Attribute> attributes;
+    ArrayList<Integer> attributeIndexes;
+
+    // Input and output
+    String sortedFileName;
     TupleReader tupleReader;
     TupleWriter tupleWriter;
+
+    // To avoid conflicts between Sort operations
+    String uuid = UUID.randomUUID().toString();
 
     /**
      * The following fields are required during
@@ -31,11 +38,13 @@ public class Sort extends Operator {
     boolean isDistinct;
 
     int numOfBuff;
-    int numSortedRuns;
     int numOfPasses = 0;
-    ArrayList<Tuple> sorted;
-    int totalSize = 0;          // debugging purposes
-    int readSize = 0;           // debugging purposes
+    int totalInputSize = 0;          // debugging purposes
+    int totalOutputSize = 0;         // debugging purposes
+
+    // Merging
+    int numSortedRuns;
+    int maxTuplesInSR = 0;
 
     /**
      * constructor
@@ -67,7 +76,7 @@ public class Sort extends Operator {
         batchSize = Batch.getPageSize() / tupleSize;
 
         if (batchSize <= 0) {
-            System.err.println("Page size must be larger than Tuple size in join operation");
+            System.err.println("Page size must be larger than tuple size in Sort operation");
             return false;
         }
 
@@ -77,7 +86,7 @@ public class Sort extends Operator {
             attributeIndexes.add(schema.indexOf(a));
         }
 
-        numSortedRuns = generateSortedRuns();
+        generateSortedRuns();
 
         if (numSortedRuns == 0) {
             eos = true;
@@ -85,27 +94,6 @@ public class Sort extends Operator {
         }
 
         mergeSortedRuns();
-
-        // Read final sorted run
-        numOfPasses++;
-        String filename = String.format("SortTemp-P%d-SR0", numOfPasses == 1 ? 0 : numOfPasses);
-        tupleReader = new TupleReader(filename, batchSize * numSortedRuns);
-        tupleReader.open();
-        sorted = new ArrayList<>();
-        while (!tupleReader.isEOF()) {
-            sorted.add(tupleReader.next());
-        }
-        tupleReader.close();
-
-        if (sorted.size() != totalSize) {
-            System.err.println("Error in performing Sort operation");
-            System.err.println("Num of read tuples != Num of generated tuples");
-            return false;
-        }
-
-        // Cleanup
-        File f = new File(filename);
-        f.delete();
 
         return true;
     }
@@ -115,19 +103,20 @@ public class Sort extends Operator {
         // Close when end of stream
         if (eos) {
             close();
-            printStatistics();
+            printStatistics(); // debug
             return null;
         }
 
         /** An output buffer is initiated **/
         outBatch = new Batch(batchSize);
 
-        while (!outBatch.isFull() && !sorted.isEmpty()) {
-            outBatch.add(sorted.get(0));
-            sorted.remove(0);
+        // Read from final sorted file
+        while (!outBatch.isFull() && !tupleReader.isEOF()) {
+            outBatch.add(tupleReader.next());
+            totalOutputSize++;
         }
 
-        if (sorted.isEmpty()) {
+        if (tupleReader.isEOF()) {
             eos = true;
             return outBatch;
         }
@@ -135,14 +124,14 @@ public class Sort extends Operator {
         return outBatch;
     }
 
-    private int generateSortedRuns() {
+    private void generateSortedRuns() {
 
-        int numSortedRuns = 0;
+        numSortedRuns = 0;
         Batch inputBatch;
 
         // Generate sorted runs
         while ((inputBatch = base.next()) != null) {
-            String filename = String.format("SortTemp-P0-SR%d", numSortedRuns);
+            String filename = getFileName(0, numSortedRuns);
 
             // Tuples in current sorted run
             ArrayList<Tuple> tuples = new ArrayList<>();
@@ -159,154 +148,147 @@ public class Sort extends Operator {
                 }
             }
 
-            // Sort the tuples and generate sorted run
-            if (isAsc) {
-                tuples.sort((x, y) -> compareTuples(x, y, attributeIndexes));
-            } else {
-                tuples.sort((x, y) -> compareTuples(y, x, attributeIndexes));
-            }
+            // Sort the tuples
+            tuples.sort(isAsc
+                    ? (x, y) -> compareTuples(x, y, attributeIndexes)
+                    : (x, y) -> compareTuples(y, x, attributeIndexes));
 
             // Write sorted runs
             tupleWriter = new TupleWriter(filename, batchSize);
             tupleWriter.open();
             for (Tuple t : tuples) {
                 tupleWriter.next(t);
-                totalSize++;
+                totalInputSize++;
             }
             tupleWriter.close();
 
+            maxTuplesInSR = Math.max(maxTuplesInSR, tuples.size());
+
             numSortedRuns++;
         }
-
-        return numSortedRuns;
     }
 
     private void mergeSortedRuns() {
 
-        int totalSRs = this.numSortedRuns;
-        int numInputBuffers = numOfBuff - 1;
+        int numOfInputBuffers = numOfBuff - 1;
 
-        int readSRs = 0;
-        int writeSRs = 0;
-        int genSRs = numSortedRuns;
+        while (numSortedRuns > 1) {
 
-//        int writeSize = 0;
+            int mergedSRs = 0;
+            int currSRs = numSortedRuns;
 
-        boolean updatePass = false;
-        while (totalSRs > 1) {
-
-            // Setup input buffers
-            ArrayList<Batch> inputBuffers = new ArrayList<>();
-
-            ArrayList<TupleReader> tupleReaders = new ArrayList<>();
-            int numMergedSRs = Math.min(numInputBuffers, genSRs);
-            for (int i = 0; i < numMergedSRs; i++) {
-
-                if (genSRs <= readSRs + i) {
-                    updatePass = true;
-                    break;
-                }
-
-                String sortedRunFile = String.format("SortTemp-P%d-SR%d", numOfPasses, readSRs + i);
-                TupleReader tr = new TupleReader(sortedRunFile, batchSize);
-                tr.open();
-                tupleReaders.add(tr);
-            }
-
-            numMergedSRs = tupleReaders.size();
-            readSRs += numMergedSRs;
-
-            // Read input buffers
-            for (TupleReader tr : tupleReaders) {
-                Batch b = new Batch(batchSize);
-                while (!b.isFull() && !tr.isEOF()) {
-                    b.add(tr.next());
-                    readSize++;
-                }
-
-                if (tr.isEOF()) {
-                    tr.close();
-                }
-
-                inputBuffers.add(b);
-            }
-
-            // Find selected buffer to get tuple and write to output
-            String fileOutput = String.format("SortTemp-P%d-SR%d", numOfPasses + 1, writeSRs);
-            tupleWriter = new TupleWriter(fileOutput, batchSize);
-            tupleWriter.open();
-
-            Tuple prevTuple = null;
-            while (!inputBuffers.stream().allMatch(Batch::isEmpty)) {
-                Tuple currTuple = getTuple(inputBuffers, tupleReaders);
-                if (!isDistinct || prevTuple == null || isDistinct(prevTuple, currTuple)) {
-                    tupleWriter.next(currTuple);
-//                    writeSize++;
-                }
-
-                prevTuple = currTuple;
-
-                for (int i = 0; i < numMergedSRs; i++) {
-                    Batch inputBuffer = inputBuffers.get(i);
-                    TupleReader tr = tupleReaders.get(i);
-
-                    if (!inputBuffer.isEmpty() || tr.isEOF()) {
-                        continue;
+            numSortedRuns = 0;
+            while (mergedSRs < currSRs) {
+                ArrayList<String> fileInputs = new ArrayList<>();
+                for (int i = 0; i < numOfInputBuffers; i++) {
+                    if (mergedSRs == currSRs) {
+                        break;
                     }
 
-                    while (!inputBuffer.isFull() && !tr.isEOF()) {
-                        inputBuffer.add(tr.next());
-//                        readSize++;
-                    }
+                    String fileInput = getFileName(numOfPasses, mergedSRs);
+                    fileInputs.add(fileInput);
+                    mergedSRs++;
+                }
+
+                mergeRuns(fileInputs);
+                numSortedRuns++;
+
+                // Cleanup temp files
+                for (String filename : fileInputs) {
+                    File f = new File(filename);
+                    f.delete();
                 }
             }
 
-            tupleWriter.close();
-
-            totalSRs -= numMergedSRs;
-            writeSRs++;
-            totalSRs++;
-
-            if (updatePass) {
-//                System.out.printf("Read SRs #%d: %d\n", numOfPasses + 1, readSRs);
-                genSRs = writeSRs;
-                readSRs = 0;
-                writeSRs = 0;
-                numOfPasses++;
-//                System.out.printf("Read size #%d: %d\n", numOfPasses, readSize);
-//                System.out.printf("Write size #%d: %d\n", numOfPasses, writeSize);
-//                readSize = 0;
-//                writeSize = 0;
-                updatePass = false;
-            }
+            numOfPasses++;
         }
+
+        sortedFileName = getFileName(numOfPasses, 0);
+        tupleReader = new TupleReader(sortedFileName, batchSize);
+        tupleReader.open();
     }
 
-    private Tuple getTuple(ArrayList<Batch> inputBuffers, ArrayList<TupleReader> tupleReaders) {
+    private void mergeRuns(ArrayList<String> fileInputs) {
+
+        // Setup input buffers and readers
+        ArrayList<Batch> inputBuffers = new ArrayList<>();
+        ArrayList<TupleReader> tupleReaders = new ArrayList<>();
+
+        for (String fileInput : fileInputs) {
+            TupleReader tupleReader = new TupleReader(fileInput, batchSize);
+            tupleReaders.add(tupleReader);
+            tupleReader.open();
+
+            Batch inputBuffer = new Batch(batchSize);
+            while (!inputBuffer.isFull() && !tupleReader.isEOF()) {
+                inputBuffer.add(tupleReader.next());
+            }
+
+            inputBuffers.add(inputBuffer);
+        }
+
+        // Merge input buffers
+        mergeTuples(inputBuffers, tupleReaders);
+
+    }
+
+    private void mergeTuples(ArrayList<Batch> inputBuffers, ArrayList<TupleReader> tupleReaders) {
+
+        String fileOutput = getFileName(numOfPasses + 1, numSortedRuns);
+        TupleWriter tw = new TupleWriter(fileOutput, maxTuplesInSR);
+        tw.open();
+
+        Batch outBatch = new Batch(batchSize);
+
+        int tuplesInSR = 0;
+
+        Tuple prevTuple = null;
+        while (!inputBuffers.stream().allMatch(Batch::isEmpty)) {
+            Tuple selectedTuple = getSelectedTuple(inputBuffers, tupleReaders);
+
+            if (!isDistinct || prevTuple == null || isDistinct(prevTuple, selectedTuple)) {
+                outBatch.add(selectedTuple);
+
+                if (outBatch.isFull()) {
+                    while (!outBatch.isEmpty()) {
+                        tw.next(outBatch.poll());
+                        tuplesInSR++;
+                    }
+                }
+            }
+
+            prevTuple = selectedTuple;
+        }
+
+        while (!outBatch.isEmpty()) {
+            tw.next(outBatch.poll());
+            tuplesInSR++;
+        }
+
+        tw.close();
+
+        maxTuplesInSR = Math.max(tuplesInSR, maxTuplesInSR);
+    }
+
+    private Tuple getSelectedTuple(ArrayList<Batch> inputBuffers, ArrayList<TupleReader> tupleReaders) {
 
         Tuple selectedTuple = null;
-        Batch selectedBatch = null;
-        int compareResult;
+        int selected = -1;
 
+        int compareResult;
         for (int i = 0; i < inputBuffers.size(); i++) {
 
             Batch inputBuffer = inputBuffers.get(i);
 
             if (inputBuffer.isEmpty()) {
-                TupleReader tr = tupleReaders.get(i);
-                while (!tr.isEOF() && !inputBuffer.isFull()) {
-                    inputBuffer.add(tr.next());
-                    readSize++;
-                }
+                continue;
             }
-
-            if (inputBuffer.isEmpty()) continue;
 
             Tuple currTuple = inputBuffer.peek();
 
             if (selectedTuple == null) {
                 selectedTuple = currTuple;
-                selectedBatch = inputBuffer;
+                selected = i;
                 continue;
             }
 
@@ -317,30 +299,35 @@ public class Sort extends Operator {
             }
 
             selectedTuple = currTuple;
-            selectedBatch = inputBuffer;
+            selected = i;
         }
 
-        assert selectedBatch != null;
+        Batch selectedBatch = inputBuffers.get(selected);
+        TupleReader tr = tupleReaders.get(selected);
+        selectedTuple = selectedBatch.poll();
 
-        return selectedBatch.poll();
+        // Refill buffer
+        if (!tr.isEOF()) {
+            selectedBatch.add(tr.next());
+        } else {
+            tr.close();
+        }
+
+        return selectedTuple;
+    }
+
+    private String getFileName(int numOfPasses, int sortedRunIndex) {
+        return String.format("SortTemp-%s-P%d-SR%d", uuid, numOfPasses, sortedRunIndex);
     }
 
     public boolean close() {
+        // Close streams
+        tupleReader.close();
+        tupleWriter.close();
 
         // Remove temp files
-        System.gc();
-        for (int i = 0; i <= numOfPasses; i++) {
-            int j = 0;
-            while (true) {
-                String filename = String.format("SortTemp-P%d-SR%d", i, j);
-                File f = new File(filename);
-
-                if (!f.exists()) break;
-
-                f.delete();
-                j++;
-            }
-        }
+        File f = new File(sortedFileName);
+        f.delete();
 
         return true;
     }
@@ -399,8 +386,8 @@ public class Sort extends Operator {
 
     // Debugging
     private void printStatistics() {
-        System.out.println("Sorted Runs: " + numSortedRuns);
         System.out.println("Passes: " + numOfPasses);
-        System.out.printf("Total tuples: %d\n", totalSize);
+        System.out.printf("Input tuples: %d\n", totalInputSize);
+        System.out.printf("Output tuples: %d\n", totalOutputSize);
     }
 }
