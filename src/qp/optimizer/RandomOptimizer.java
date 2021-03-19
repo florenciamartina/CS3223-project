@@ -230,7 +230,8 @@ public class RandomOptimizer {
             Join node = (Join) findNodeAt(root, joinNum);
             int prevJoinMeth = node.getJoinType();
 //            int joinMeth = RandNumb.randInt(0, numJMeth - 1);
-            int joinMeth = JoinType.BLOCKNESTED;
+//            int joinMeth = JoinType.BLOCKNESTED;
+            int joinMeth = JoinType.SORTMERGE;
 //            while (joinMeth == prevJoinMeth) {
 ////                joinMeth = RandNumb.randInt(0, numJMeth - 1);
 //            }
