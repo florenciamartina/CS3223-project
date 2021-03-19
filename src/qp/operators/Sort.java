@@ -6,6 +6,7 @@ package qp.operators;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.UUID;
 
 import qp.optimizer.BufferManager;
 import qp.utils.*;
@@ -14,12 +15,16 @@ public class Sort extends Operator {
 
     int batchSize;  // Number of tuples per outbatch
     Operator base;
-    ArrayList<Integer> attributeIndexes;
     ArrayList<Attribute> attributes;
+    ArrayList<Integer> attributeIndexes;
 
+    // Input and output
     String sortedFileName;
     TupleReader tupleReader;
     TupleWriter tupleWriter;
+
+    // To avoid conflicts between Sort operations
+    String uuid = UUID.randomUUID().toString();
 
     /**
      * The following fields are required during
@@ -34,7 +39,8 @@ public class Sort extends Operator {
 
     int numOfBuff;
     int numOfPasses = 0;
-    int totalSize = 0;          // debugging purposes
+    int totalInputSize = 0;          // debugging purposes
+    int totalOutputSize = 0;         // debugging purposes
 
     // Merging
     int numSortedRuns;
@@ -97,7 +103,7 @@ public class Sort extends Operator {
         // Close when end of stream
         if (eos) {
             close();
-            printStatistics();
+            printStatistics(); // debug
             return null;
         }
 
@@ -107,6 +113,7 @@ public class Sort extends Operator {
         // Read from final sorted file
         while (!outBatch.isFull() && !tupleReader.isEOF()) {
             outBatch.add(tupleReader.next());
+            totalOutputSize++;
         }
 
         if (tupleReader.isEOF()) {
@@ -124,7 +131,7 @@ public class Sort extends Operator {
 
         // Generate sorted runs
         while ((inputBatch = base.next()) != null) {
-            String filename = String.format("SortTemp-P0-SR%d", numSortedRuns);
+            String filename = getFileName(0, numSortedRuns);
 
             // Tuples in current sorted run
             ArrayList<Tuple> tuples = new ArrayList<>();
@@ -151,7 +158,7 @@ public class Sort extends Operator {
             tupleWriter.open();
             for (Tuple t : tuples) {
                 tupleWriter.next(t);
-                totalSize++;
+                totalInputSize++;
             }
             tupleWriter.close();
 
@@ -178,7 +185,7 @@ public class Sort extends Operator {
                         break;
                     }
 
-                    String fileInput = String.format("SortTemp-P%d-SR%d", numOfPasses, mergedSRs);
+                    String fileInput = getFileName(numOfPasses, mergedSRs);
                     fileInputs.add(fileInput);
                     mergedSRs++;
                 }
@@ -186,17 +193,17 @@ public class Sort extends Operator {
                 mergeRuns(fileInputs);
                 numSortedRuns++;
 
-                // Cleanup
+                // Cleanup temp files
                 for (String filename : fileInputs) {
                     File f = new File(filename);
                     f.delete();
                 }
             }
-            // Increment iteration
+
             numOfPasses++;
         }
 
-        sortedFileName = String.format("SortTemp-P%d-SR%d", numOfPasses, 0);
+        sortedFileName = getFileName(numOfPasses, 0);
         tupleReader = new TupleReader(sortedFileName, batchSize);
         tupleReader.open();
     }
@@ -227,7 +234,7 @@ public class Sort extends Operator {
 
     private void mergeTuples(ArrayList<Batch> inputBuffers, ArrayList<TupleReader> tupleReaders) {
 
-        String fileOutput = String.format("SortTemp-P%d-SR%d", numOfPasses + 1, numSortedRuns);
+        String fileOutput = getFileName(numOfPasses + 1, numSortedRuns);
         TupleWriter tw = new TupleWriter(fileOutput, maxTuplesInSR);
         tw.open();
 
@@ -277,8 +284,6 @@ public class Sort extends Operator {
                 continue;
             }
 
-            if (inputBuffer.isEmpty()) continue;
-
             Tuple currTuple = inputBuffer.peek();
 
             if (selectedTuple == null) {
@@ -301,6 +306,7 @@ public class Sort extends Operator {
         TupleReader tr = tupleReaders.get(selected);
         selectedTuple = selectedBatch.poll();
 
+        // Refill buffer
         if (!tr.isEOF()) {
             selectedBatch.add(tr.next());
         } else {
@@ -310,23 +316,14 @@ public class Sort extends Operator {
         return selectedTuple;
     }
 
+    private String getFileName(int numOfPasses, int sortedRunIndex) {
+        return String.format("SortTemp-%s-P%d-SR%d", uuid, numOfPasses, sortedRunIndex);
+    }
+
     public boolean close() {
-
-        // Remove temp files
-        System.gc();
-        for (int i = 0; i <= numOfPasses; i++) {
-            int j = 0;
-            while (true) {
-                String filename = String.format("SortTemp-P%d-SR%d", i, j);
-                File f = new File(filename);
-
-                if (!f.exists()) break;
-
-                f.delete();
-                j++;
-            }
-        }
-
+        // Close streams
+        tupleReader.close();
+        tupleWriter.close();
         return true;
     }
 
@@ -385,6 +382,7 @@ public class Sort extends Operator {
     // Debugging
     private void printStatistics() {
         System.out.println("Passes: " + numOfPasses);
-        System.out.printf("Total tuples: %d\n", totalSize);
+        System.out.printf("Input tuples: %d\n", totalInputSize);
+        System.out.printf("Output tuples: %d\n", totalOutputSize);
     }
 }
