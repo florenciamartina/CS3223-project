@@ -28,10 +28,7 @@ public class RandomOptimizer {
 
     SQLQuery sqlquery;  // Vector of Vectors of Select + From + Where + GroupBy
 
-    //TODO: This calls my modified numJoin
-    int numJoin;        // Number of joins in this query plan
-//    int numDistinctTableJoins;
-
+    int numJoin;        // Number of joins between distinct pairs of tables in this query plan
 
     /**
      * constructor
@@ -109,8 +106,6 @@ public class RandomOptimizer {
         // Randomly select a node to be altered to get the neighbour
         int nodeNum = RandNumb.randInt(0, numJoin - 1);
 
-        //TODO:
-//        int nodeNum = RandNumb.randInt(0, numDistinctTableJoins - 1);
         // Randomly select type of alteration: Change Method/Associative/Commutative
         int changeType = RandNumb.randInt(0, NUM_CHOICES - 1);
         Operator neighbor = null;
